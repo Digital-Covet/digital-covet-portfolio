@@ -129,7 +129,7 @@ export async function getShareInfo(token: string): Promise<ShareInfo> {
   if (!validatedToken.success) return { exists: false };
 
   const share = await prisma.shareLink.findFirst({
-    where: { token: validatedToken },
+    where: { token: validatedToken.data },
     select: {
       id: true,
       name: true,
@@ -153,13 +153,13 @@ export async function unlockShare(token: string, password: string) {
   if (!validated.success) throw new Error("Share not found");
 
   const share = await prisma.shareLink.findFirst({
-    where: { token: validated.token },
+    where: { token: validated.data.token },
   });
 
   if (!share) throw new Error("Share not found");
   assertShareAccessible(share);
 
-  const ok = await verifyPassword(validated.password, share.passwordHash);
+  const ok = await verifyPassword(validated.data.password, share.passwordHash);
   if (!ok) throw new Error("Incorrect password");
 
   const cookieStore = await cookies();
@@ -200,7 +200,7 @@ export async function getShareContent(token: string): Promise<ShareContent> {
   if (!validatedToken.success) throw new Error("Not found");
 
   const share = await prisma.shareLink.findFirst({
-    where: { token: validatedToken },
+    where: { token: validatedToken.data },
   });
 
   if (!share) throw new Error("Not found");

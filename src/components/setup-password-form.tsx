@@ -44,9 +44,9 @@ export function SetupPasswordForm({ email, token }: SetupPasswordFormProps) {
 
     const result = await setupPassword(token, newPassword);
 
-    if (result.error) {
+    if (!result.ok) {
       toast.error(result.error);
-    } else if (result.success) {
+    } else if (result.data.success) {
       toast.success("Password changed successfully!");
 
       const signInResult = await authClient.signIn.email({

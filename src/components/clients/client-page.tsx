@@ -32,11 +32,11 @@ interface Taxonomies {
 type EditingClient =
   | Taxonomies["clients"][number]
   | {
-    id?: string;
-    name: string;
-    logoUrl: string | null;
-    industryId: string | null;
-  };
+      id?: string;
+      name: string;
+      logoUrl: string | null;
+      industryId: string | null;
+    };
 
 export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
   const router = useRouter();

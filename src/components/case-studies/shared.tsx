@@ -50,10 +50,11 @@ export function TagSelector({
               key={it.id}
               type="button"
               onClick={() => onToggle(it.id)}
-              className={`rounded-full border px-3 py-1 text-xs transition-colors ${selected.includes(it.id)
+              className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                selected.includes(it.id)
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border hover:bg-muted"
-                }`}
+              }`}
             >
               {it.name}
             </button>

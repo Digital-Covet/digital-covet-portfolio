@@ -1,8 +1,9 @@
 "use client";
 
-import * as React from "react";
+import { RowsIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type * as React from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -12,7 +13,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { RowsIcon } from "@phosphor-icons/react";
 
 const navItems = [
   { title: "Dashboard", url: "/dashboard" },

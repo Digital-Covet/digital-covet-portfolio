@@ -61,7 +61,9 @@ export default async function SetupPasswordPage(props: PageProps) {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-green-600">Account Already Activated</h1>
+          <h1 className="text-2xl font-bold text-green-600">
+            Account Already Activated
+          </h1>
           <p className="mt-2 text-muted-foreground">
             Your password has already been set up. Please log in normally.
           </p>

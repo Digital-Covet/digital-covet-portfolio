@@ -31,11 +31,11 @@ export type ShareStatus = "ok" | "expired" | "revoked" | "limit";
 export type ShareInfo =
   | { exists: false }
   | {
-    exists: true;
-    name: string;
-    status: ShareStatus;
-    unlocked: boolean;
-  };
+      exists: true;
+      name: string;
+      status: ShareStatus;
+      unlocked: boolean;
+    };
 
 export type SerializedStudy = {
   id: string;

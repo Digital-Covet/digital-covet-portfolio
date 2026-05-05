@@ -14,7 +14,10 @@ function hashPassword(password: string): string {
   return `${salt}:${key}`;
 }
 
-export async function verifySharePassword(password: string, stored: string): Promise<boolean> {
+export async function verifySharePassword(
+  password: string,
+  stored: string,
+): Promise<boolean> {
   const [salt, expectedKey] = stored.split(":");
   const candidateKey = scryptSync(password, salt, SCRYPT_KEY_LENGTH).toString(
     "hex",

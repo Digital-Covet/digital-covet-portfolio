@@ -1,4 +1,5 @@
 "use server";
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/db";
 import { requireRole } from "@/lib/auth.server";
@@ -28,7 +29,10 @@ export async function createTaxonomy({
   if (!name.trim()) {
     throw new Error("Name is required");
   }
-  return createTaxonomyItem(type, name.trim());
+  const result = await createTaxonomyItem(type, name.trim());
+  revalidatePath("/taxonomies");
+  revalidatePath("/shares/new");
+  return result;
 }
 
 export async function deleteTaxonomy({
@@ -39,7 +43,10 @@ export async function deleteTaxonomy({
   id: string;
 }) {
   await requireRole("admin");
-  return deleteTaxonomyItem(type, id);
+  const result = await deleteTaxonomyItem(type, id);
+  revalidatePath("/taxonomies");
+  revalidatePath("/shares/new");
+  return result;
 }
 
 // --- Client Actions ---
@@ -61,16 +68,20 @@ export async function upsertClient(input: z.infer<typeof clientInputSchema>) {
     industryId: data.industryId ?? null,
   };
 
+  let result;
   if (data.id) {
-    return prisma.client.update({
+    result = await prisma.client.update({
       where: { id: data.id },
       data: values,
     });
+  } else {
+    result = await prisma.client.create({
+      data: values,
+    });
   }
-
-  return prisma.client.create({
-    data: values,
-  });
+  revalidatePath("/clients");
+  revalidatePath("/shares/new");
+  return result;
 }
 
 const deleteClientSchema = z.object({
@@ -83,6 +94,8 @@ export async function deleteClient(input: z.infer<typeof deleteClientSchema>) {
   await prisma.client.delete({
     where: { id: data.id },
   });
+  revalidatePath("/clients");
+  revalidatePath("/shares/new");
   return { success: true };
 }
 
@@ -240,6 +253,11 @@ export async function upsertCaseStudy(input: z.infer<typeof caseStudyInput>) {
 
     return { id };
   });
+
+  revalidatePath("/case-studies");
+  revalidatePath("/dashboard");
+  revalidatePath("/shares/new");
+  return { id };
 }
 
 export async function listCaseStudies() {
@@ -320,5 +338,8 @@ export async function deleteCaseStudy(input: z.infer<typeof deleteInput>) {
     throw new Error("Not found or unauthorized to delete this case study");
   }
 
+  revalidatePath("/case-studies");
+  revalidatePath("/dashboard");
+  revalidatePath("/shares/new");
   return { success: true };
 }

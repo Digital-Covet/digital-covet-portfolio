@@ -932,10 +932,11 @@ export default function Page() {
                 className="flex items-start gap-3 rounded-md p-2 transition-colors hover:bg-muted"
               >
                 <div
-                  className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${item.type === "case_study"
+                  className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+                    item.type === "case_study"
                       ? "bg-primary/10 text-primary"
                       : "bg-secondary text-secondary-foreground"
-                    }`}
+                  }`}
                 >
                   {item.type === "case_study" ? (
                     item.action === "created" ? (

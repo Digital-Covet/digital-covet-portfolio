@@ -45,14 +45,14 @@ export default function SharePage({
   useEffect(() => {
     getShareInfo(token)
       .then(setInfo)
-      .catch(() => { });
+      .catch(() => {});
   }, [token]);
 
   useEffect(() => {
     if (info && info.exists && info.unlocked && info.status === "ok") {
       getShareContent(token)
         .then(setContent)
-        .catch(() => { });
+        .catch(() => {});
     }
   }, [info, token]);
 
@@ -420,6 +420,6 @@ function toEmbed(url: string): string {
     if (u.hostname.includes("vimeo.com")) {
       return `https://player.vimeo.com/video${u.pathname}`;
     }
-  } catch { }
+  } catch {}
   return url;
 }

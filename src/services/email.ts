@@ -65,8 +65,8 @@ export async function sendEmail({
       );
       throw new Error(
         response.message ||
-        JSON.stringify(response) ||
-        "ZeptoMail rejected the email request.",
+          JSON.stringify(response) ||
+          "ZeptoMail rejected the email request.",
       );
     }
   } catch (error: any) {

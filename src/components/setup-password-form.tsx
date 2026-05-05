@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { setupPassword } from "@/actions/invite";
-import { authClient } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authClient } from "@/lib/auth-client";
 
 interface SetupPasswordFormProps {
   email: string;
@@ -55,7 +55,9 @@ export function SetupPasswordForm({ email, token }: SetupPasswordFormProps) {
       });
 
       if (signInResult.error) {
-        toast.error("Password changed but sign in failed. Please log in manually.");
+        toast.error(
+          "Password changed but sign in failed. Please log in manually.",
+        );
         router.push("/auth/login");
       } else {
         router.push("/auth/setup-2fa");

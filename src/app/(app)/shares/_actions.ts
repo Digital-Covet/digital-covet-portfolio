@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/db";
 import { generateToken, hashPassword, requireRole } from "@/lib/auth.server";
@@ -87,6 +88,9 @@ export async function createShare(input: CreateShareInput) {
   });
 
   return { share, url: `/share/${token}` };
+
+  revalidatePath("/shares");
+  revalidatePath("/dashboard");
 }
 
 export async function listShares() {
@@ -127,6 +131,8 @@ export async function revokeShare(id: string) {
     );
   }
 
+  revalidatePath("/shares");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 

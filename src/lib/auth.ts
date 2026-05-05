@@ -10,44 +10,44 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-emailAndPassword: {
-      enabled: true,
-      requireEmailVerification: true,
-      sendResetPassword: async ({ user, url }, _request) => {
-        try {
-          await sendEmail({
-            to: user.email,
-            subject: "Reset your password",
-            text: `Click the link to reset your password: ${url}`,
-          });
-        } catch (error) {
-          console.error(
-            "[Auth Hook] Failed to send reset password email:",
-            error instanceof Error ? error.message : error,
-          );
-          throw new Error("Failed to send reset password email.");
-        }
-      },
+  emailAndPassword: {
+    enabled: true,
+    requireEmailVerification: true,
+    sendResetPassword: async ({ user, url }, _request) => {
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: "Reset your password",
+          text: `Click the link to reset your password: ${url}`,
+        });
+      } catch (error) {
+        console.error(
+          "[Auth Hook] Failed to send reset password email:",
+          error instanceof Error ? error.message : error,
+        );
+        throw new Error("Failed to send reset password email.");
+      }
     },
-emailVerification: {
-      sendOnSignUp: true,
-      sendOnSignIn: true,
-      sendVerificationEmail: async ({ user, url }, _request) => {
-        try {
-          await sendEmail({
-            to: user.email,
-            subject: "Verify your email address",
-            text: `Click the link to verify your email: ${url}`,
-          });
-        } catch (error) {
-          console.error(
-            "[Auth Hook] Failed to send verification email:",
-            error instanceof Error ? error.message : error,
-          );
-          throw new Error("Failed to send verification email.");
-        }
-      },
+  },
+  emailVerification: {
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    sendVerificationEmail: async ({ user, url }, _request) => {
+      try {
+        await sendEmail({
+          to: user.email,
+          subject: "Verify your email address",
+          text: `Click the link to verify your email: ${url}`,
+        });
+      } catch (error) {
+        console.error(
+          "[Auth Hook] Failed to send verification email:",
+          error instanceof Error ? error.message : error,
+        );
+        throw new Error("Failed to send verification email.");
+      }
     },
+  },
   user: {
     additionalFields: {
       departmentId: {

@@ -6,6 +6,7 @@ import { sendEmail } from "@/services/email";
 import { ac, adminRole, employeeRole, superadminRole } from "./permission";
 
 export const auth = betterAuth({
+  trustedOrigins: ["https://portfolio.digitalcovet.com"],
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),

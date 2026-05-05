@@ -1,3 +1,4 @@
+// src/proxy.ts
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
@@ -14,7 +15,6 @@ const publicRoutes = [
 ] as const;
 
 const TWO_FACTOR_PENDING_COOKIE = "better-auth.two_factor_session";
-
 const TWO_FACTOR_PENDING_COOKIE_SECURE =
   "__Secure-better-auth.two_factor_session";
 
@@ -47,7 +47,6 @@ export async function proxy(request: NextRequest) {
     if (pathname === "/auth/verify-2fa") {
       return NextResponse.next();
     }
-
     return NextResponse.redirect(new URL("/auth/verify-2fa", request.url));
   }
 
@@ -76,15 +75,18 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL(ROUTES.SETUP_PASSWORD, request.url));
     }
 
-    if (
-      user.twoFactorEnabled === false &&
-      pathname !== ROUTES.SETUP_2FA &&
-      !isPublicRoute(pathname)
-    ) {
+    // 2FA enforcement:
+    // - If 2FA is not enabled and user is NOT already on the setup page,
+    //   redirect them to setup.
+    // - If they are already on /auth/setup-2fa, let them stay (avoid loop).
+    if (user.twoFactorEnabled === false && pathname !== ROUTES.SETUP_2FA) {
       return NextResponse.redirect(new URL(ROUTES.SETUP_2FA, request.url));
     }
 
-    if (isPublicRoute(pathname)) {
+    // Public route redirect:
+    // - Authenticated users on public pages should go to /dashboard,
+    //   BUT we must exclude /auth/setup-2fa to avoid the loop.
+    if (isPublicRoute(pathname) && pathname !== ROUTES.SETUP_2FA) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   } catch (error) {

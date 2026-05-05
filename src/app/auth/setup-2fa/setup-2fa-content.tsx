@@ -1,15 +1,20 @@
 "use client";
-
 import { useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { toast } from "sonner";
 import { TwoFactorSetup } from "@/components/two-factor-setup";
+import { authClient } from "@/lib/auth-client";
 
 function Setup2FAContent() {
   const router = useRouter();
 
-  const handleComplete = () => {
-    toast.success("Two-factor authentication enabled!");
+const { refetch } = authClient.useSession();
+
+    const handleComplete = async () => {
+        toast.success("Two-factor authentication enabled!");
+
+        await refetch();
+
     router.push("/dashboard");
   };
 

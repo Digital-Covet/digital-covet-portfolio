@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { SetupPasswordForm } from "@/components/setup-password-form";
 import { prisma } from "@/db";
 
@@ -40,6 +41,10 @@ export default async function SetupPasswordPage(props: PageProps) {
     );
   }
 
+  if (invitation.usedAt) {
+    redirect("/dashboard");
+  }
+
   if (invitation.expiresAt.getTime() < Date.now()) {
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
@@ -58,18 +63,7 @@ export default async function SetupPasswordPage(props: PageProps) {
   });
 
   if (user?.passwordChanged) {
-    return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-green-600">
-            Account Already Activated
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            Your password has already been set up. Please log in normally.
-          </p>
-        </div>
-      </div>
-    );
+    redirect("/dashboard");
   }
 
   return (

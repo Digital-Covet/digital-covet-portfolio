@@ -1,8 +1,17 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono, Jost, Rubik } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 
+const jostSans = Jost({
+  subsets: ["latin"],
+  variable: "--font-jost",
+});
+
+const rubikSans = Rubik({
+  subsets: ["latin"],
+  variable: "--font-rubik",
+});
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
@@ -30,9 +39,11 @@ export default function RootLayout({
         "antialiased",
         jetbrainsMono.variable,
         interSans.variable,
+        rubikSans.variable,
+        jostSans.variable,
       )}
     >
-      <body className="dark min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

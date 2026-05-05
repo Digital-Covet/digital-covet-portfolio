@@ -11,7 +11,7 @@ export type UserWhereFilter =
 
 interface AuthUser {
   id: string;
-  role: string;
+  role: string | null;
   departmentId: string | null;
 }
 
@@ -44,7 +44,7 @@ export async function buildUserListRbacFilter(
   if (authUser.role === "superadmin") return undefined;
 
   if (authUser.role === "admin") {
-    if (!authUser.departmentId) return { id: "__no_match__" };
+    if (!authUser.departmentId) return undefined;
     return { departmentId: authUser.departmentId };
   }
 

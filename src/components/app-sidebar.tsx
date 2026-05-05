@@ -18,6 +18,7 @@ const navItems = [
   { title: "Dashboard", url: "/dashboard" },
   { title: "Case Studies", url: "/case-studies" },
   { title: "Clients", url: "/clients" },
+  { title: "Users", url: "/users" },
   { title: "Taxonomies", url: "/taxonomies" },
   { title: "Shares", url: "/shares" },
 ];

@@ -29,7 +29,7 @@ The content is organized as follows:
 ## Notes
 - Some files may have been excluded based on .gitignore rules and Repomix's configuration
 - Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Only files matching these patterns are included: **/actions/**
+- Only files matching these patterns are included: **/actions/**, **/rbac*, **/auth.type*, **/*.prisma
 - Files matching patterns in .gitignore are excluded
 - Files matching default ignore patterns are excluded
 - Code comments have been removed from supported file types
@@ -38,14 +38,291 @@ The content is organized as follows:
 
 # Directory Structure
 ```
+prisma/
+  schema.prisma
 src/
   actions/
     content.ts
     invite.ts
     share.ts
+  lib/
+    rbac.ts
+  types/
+    auth.types.ts
 ```
 
 # Files
+
+## File: prisma/schema.prisma
+```prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id               String       @id
+  name             String
+  email            String
+  emailVerified    Boolean      @default(false)
+  image            String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  twoFactorEnabled Boolean?     @default(false)
+  passwordChanged  Boolean      @default(false)
+  role             String?
+  banned           Boolean?     @default(false)
+  banReason        String?
+  banExpires       DateTime?
+  departmentId     String?
+  sessions         Session[]
+  accounts         Account[]
+  twofactors       TwoFactor[]
+  caseStudies      CaseStudy[]  @relation("CaseStudyCreatedBy")
+  shareLinks       ShareLink[]  @relation("ShareLinkCreatedBy")
+  invitations      Invitation[] @relation("InvitationInvitedBy")
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+model TwoFactor {
+  id          String   @id
+  secret      String
+  backupCodes String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verified    Boolean? @default(true)
+
+  @@index([secret])
+  @@index([userId])
+  @@map("twoFactor")
+}
+
+model Industry {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+
+  caseStudies CaseStudy[]
+  clients     Client[]
+
+  @@map("industries")
+}
+
+enum CaseStudyStatus {
+  draft
+  published
+  archived
+}
+
+model Client {
+  id         String   @id @default(uuid())
+  createdAt  DateTime @default(now()) @map("created_at")
+  industryId String?  @map("industry_id")
+  logoUrl    String?  @map("logo_url")
+  name       String
+  updatedAt  DateTime @default(now()) @map("updated_at")
+
+  industry    Industry?   @relation(fields: [industryId], references: [id])
+  caseStudies CaseStudy[]
+
+  @@map("clients")
+}
+
+model WorkCategory {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+
+  caseStudyCategories CaseStudyCategory[]
+
+  @@map("work_categories")
+}
+
+model Service {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+
+  caseStudyServices CaseStudyService[]
+
+  @@map("services")
+}
+
+model CaseStudy {
+  id                String          @id @default(uuid())
+  attachmentUrls    Json?           @map("attachment_urls")
+  challenge         String?
+  clientId          String?         @map("client_id")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  createdBy         String?         @map("created_by")
+  description       String?
+  galleryUrls       String[]        @map("gallery_urls")
+  heroImageUrl      String?         @map("hero_image_url")
+  industryId        String?         @map("industry_id")
+  projectDate       DateTime?       @map("project_date")
+  results           String?
+  slug              String          @unique
+  solution          String?
+  status            CaseStudyStatus @default(draft)
+  testimonialAuthor String?         @map("testimonial_author")
+  testimonialQuote  String?         @map("testimonial_quote")
+  testimonialTitle  String?         @map("testimonial_title")
+  title             String
+  updatedAt         DateTime        @default(now()) @map("updated_at")
+  videoEmbedUrl     String?         @map("video_embed_url")
+
+  client              Client?             @relation(fields: [clientId], references: [id])
+  createdByUser       User?               @relation("CaseStudyCreatedBy", fields: [createdBy], references: [id])
+  industry            Industry?           @relation(fields: [industryId], references: [id])
+  caseStudyCategories CaseStudyCategory[]
+  caseStudyMetrics    CaseStudyMetric[]
+  caseStudyServices   CaseStudyService[]
+
+  @@map("case_studies")
+}
+
+model CaseStudyCategory {
+  caseStudyId String @map("case_study_id")
+  categoryId  String @map("category_id")
+
+  caseStudy    CaseStudy    @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  workCategory WorkCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([caseStudyId, categoryId])
+  @@map("case_study_categories")
+}
+
+model CaseStudyMetric {
+  id          String  @id @default(uuid())
+  caseStudyId String  @map("case_study_id")
+  label       String
+  sortOrder   Int     @default(0) @map("sort_order")
+  unit        String?
+  value       String
+
+  caseStudy CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+
+  @@map("case_study_metrics")
+}
+
+model CaseStudyService {
+  caseStudyId String @map("case_study_id")
+  serviceId   String @map("service_id")
+
+  caseStudy CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  service   Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([caseStudyId, serviceId])
+  @@map("case_study_services")
+}
+
+model ShareLink {
+  id                   String    @id @default(uuid())
+  createdAt            DateTime  @default(now()) @map("created_at")
+  createdBy            String?   @map("created_by")
+  expiresAt            DateTime? @map("expires_at")
+  filterCategoryIds    String[]  @map("filter_category_ids")
+  filterClientIds      String[]  @map("filter_client_ids")
+  filterIndustryIds    String[]  @map("filter_industry_ids")
+  filterServiceIds     String[]  @map("filter_service_ids")
+  maxViews             Int?      @map("max_views")
+  name                 String
+  passwordHash         String    @map("password_hash")
+  recipientEmail       String?   @map("recipient_email")
+  recipientName        String?   @map("recipient_name")
+  revoked              Boolean   @default(false)
+  specificCaseStudyIds String[]  @map("specific_case_study_ids")
+  token                String    @unique
+  viewCount            Int       @default(0) @map("view_count")
+
+  createdByUser User?       @relation("ShareLinkCreatedBy", fields: [createdBy], references: [id])
+  shareViews    ShareView[]
+
+  @@map("share_links")
+}
+
+model ShareView {
+  id          String   @id @default(uuid())
+  ip          String?
+  shareLinkId String   @map("share_link_id")
+  userAgent   String?  @map("user_agent")
+  viewedAt    DateTime @default(now()) @map("viewed_at")
+
+  shareLink ShareLink @relation(fields: [shareLinkId], references: [id], onDelete: Cascade)
+
+  @@map("share_views")
+}
+
+model Invitation {
+  id        String    @id @default(cuid())
+  email     String
+  token     String    @unique
+  role      String    @default("employee")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  invitedBy String?   @map("invited_by")
+
+  invitedByUser User? @relation("InvitationInvitedBy", fields: [invitedBy], references: [id])
+
+  @@map("invitations")
+}
+```
 
 ## File: src/actions/content.ts
 ```typescript
@@ -706,5 +983,64 @@ export async function createShare(input: z.infer<typeof createShareSchema>) {
     },
   });
   return { id: shareLink.id, url: `/s/${token}` };
+}
+```
+
+## File: src/lib/rbac.ts
+```typescript
+import { prisma } from "@/db";
+export type CreatedByIdFilter =
+  | Record<string, { id: string } | { id: { in: string[] } }>
+  | undefined;
+export type UserWhereFilter =
+  | { id: string }
+  | { id: { in: string[] } }
+  | { departmentId: string };
+interface AuthUser {
+  id: string;
+  role: string;
+  departmentId: string | null;
+}
+export async function buildCreatedByRbacFilter(
+  authUser: AuthUser,
+  relationKey: string,
+): Promise<CreatedByIdFilter> {
+  if (authUser.role === "superadmin") return undefined;
+  if (authUser.role === "admin") {
+    if (!authUser.departmentId) {
+      return { [relationKey]: { id: "__no_match__" } };
+    }
+    const deptUsers = await prisma.user.findMany({
+      where: { departmentId: authUser.departmentId },
+      select: { id: true },
+    });
+    const deptUserIds = deptUsers.map((u) => u.id);
+    return { [relationKey]: { id: { in: deptUserIds } } };
+  }
+  return { [relationKey]: { id: authUser.id } };
+}
+export async function buildUserListRbacFilter(
+  authUser: AuthUser,
+): Promise<UserWhereFilter | undefined> {
+  if (authUser.role === "superadmin") return undefined;
+  if (authUser.role === "admin") {
+    if (!authUser.departmentId) return { id: "__no_match__" };
+    return { departmentId: authUser.departmentId };
+  }
+  return { id: authUser.id };
+}
+```
+
+## File: src/types/auth.types.ts
+```typescript
+export type UserRole = "superadmin" | "admin" | "employee";
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  departmentId?: string | null;
+  emailVerified: boolean;
+  twoFactorEnabled: boolean;
 }
 ```

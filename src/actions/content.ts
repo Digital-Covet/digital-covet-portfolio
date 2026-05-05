@@ -184,7 +184,7 @@ export async function upsertCaseStudy(input: z.infer<typeof caseStudyInput>) {
     status: data.status,
   };
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     let id = data.id;
 
     if (id) {
@@ -257,7 +257,7 @@ export async function upsertCaseStudy(input: z.infer<typeof caseStudyInput>) {
   revalidatePath("/case-studies");
   revalidatePath("/dashboard");
   revalidatePath("/shares/new");
-  return { id };
+  return result;
 }
 
 export async function listCaseStudies() {

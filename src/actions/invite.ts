@@ -293,7 +293,21 @@ export async function setupPassword(
     // Hash and update password directly
     const ctx = await auth.$context;
     const hash = await ctx.password.hash(newPassword);
-    await ctx.internalAdapter.updatePassword(user.id, hash);
+
+    // Check if credential exists, create if not, update if exists
+    const accounts = await ctx.internalAdapter.findAccounts(user.id);
+    const hasCredential = accounts.some((ac) => ac.providerId === "credential");
+
+    if (!hasCredential) {
+      await ctx.internalAdapter.createAccount({
+        userId: user.id,
+        providerId: "credential",
+        password: hash,
+        accountId: user.id,
+      });
+    } else {
+      await ctx.internalAdapter.updatePassword(user.id, hash);
+    }
 
     await prisma.$transaction([
       prisma.user.update({

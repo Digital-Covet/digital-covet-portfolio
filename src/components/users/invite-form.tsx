@@ -41,7 +41,6 @@ interface InviteAdminFormProps {
 }
 export function InviteAdminForm({ currentUserRole }: InviteAdminFormProps) {
   const [name, setName] = useState("");
-  const [personalEmail, setPersonalEmail] = useState("");
   const [workEmailPrefix, setWorkEmailPrefix] = useState("");
   const [role, setRole] = useState<"admin" | "superadmin">("admin");
   const [isLoading, setIsLoading] = useState(false);
@@ -65,10 +64,6 @@ export function InviteAdminForm({ currentUserRole }: InviteAdminFormProps) {
       toast.error("Please enter a work email username.");
       return;
     }
-    if (!personalEmail) {
-      toast.error("Please enter a personal email address.");
-      return;
-    }
 
     setIsLoading(true);
     setInviteUrl(null);
@@ -78,7 +73,6 @@ export function InviteAdminForm({ currentUserRole }: InviteAdminFormProps) {
         name: name.trim(),
         email: workEmail,
         role,
-        personalEmail,
       });
 
       if (!result.ok) {
@@ -138,7 +132,6 @@ export function InviteAdminForm({ currentUserRole }: InviteAdminFormProps) {
 
   const handleReset = () => {
     setName("");
-    setPersonalEmail("");
     setWorkEmailPrefix("");
     setRole("admin");
     setInviteUrl(null);
@@ -286,23 +279,6 @@ export function InviteAdminForm({ currentUserRole }: InviteAdminFormProps) {
                   {WORK_EMAIL_DOMAIN}
                 </span>
               </div>
-            </div>
-
-            {/* ── Personal email ────────────────────────────────────── */}
-            <div className="space-y-2">
-              <Label htmlFor="personalEmail">Personal email</Label>
-              <Input
-                id="personalEmail"
-                type="email"
-                placeholder="jane@gmail.com"
-                value={personalEmail}
-                onChange={(e) => setPersonalEmail(e.target.value)}
-                required
-                disabled={isLoading}
-              />
-              <p className="text-xs text-muted-foreground">
-                The invitation will be sent to this address.
-              </p>
             </div>
 
             {/* ── Role ──────────────────────────────────────────────── */}

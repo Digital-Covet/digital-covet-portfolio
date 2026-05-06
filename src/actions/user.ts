@@ -69,7 +69,6 @@ const createAdminUserSchema = z.object({
   role: z.enum(["admin", "superadmin"], {
     error: "Role must be admin or superadmin",
   }),
-  personalEmail: z.email().nullable().optional(),
 });
 
 interface CreateAdminUserData {
@@ -149,7 +148,7 @@ export async function createAdminUser(
 
     const inviteUrl = buildInviteUrl(inviteToken);
 
-    const targetEmail = data.personalEmail || data.email;
+    const targetEmail = data.email;
     fireInviteEmail(targetEmail, data.email, inviteUrl);
 
     revalidatePath("/admin/users");

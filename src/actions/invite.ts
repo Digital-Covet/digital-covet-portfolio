@@ -13,7 +13,6 @@ interface InviteSuccessData {
 }
 
 export async function testInviteEmployee(
-  personalEmail: string,
   workEmail: string,
 ): Promise<Result<InviteSuccessData>> {
   if (process.env.NODE_ENV === "production") {
@@ -24,10 +23,6 @@ export async function testInviteEmployee(
     }
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!personalEmail || !emailRegex.test(personalEmail)) {
-    return err("A valid personal email address is required.");
-  }
   if (!workEmail || !workEmail.endsWith(WORK_EMAIL_DOMAIN)) {
     return err(`A valid work email (${WORK_EMAIL_DOMAIN}) is required.`);
   }
@@ -56,7 +51,7 @@ export async function testInviteEmployee(
         existingUser.id,
         existingUser.role || ROLES.EMPLOYEE,
       );
-      fireInviteEmail(personalEmail, workEmail, result.inviteUrl);
+      fireInviteEmail(workEmail, workEmail, result.inviteUrl);
       return ok({ inviteUrl: result.inviteUrl });
     }
 
@@ -67,7 +62,7 @@ export async function testInviteEmployee(
     }
 
     const result = await createUserAndInvite(workEmail, ROLES.EMPLOYEE);
-    fireInviteEmail(personalEmail, workEmail, result.inviteUrl);
+    fireInviteEmail(workEmail, workEmail, result.inviteUrl);
     return ok({ inviteUrl: result.inviteUrl });
   } catch (error) {
     const message =
@@ -79,14 +74,9 @@ export async function testInviteEmployee(
 
 export async function inviteEmployee(
   workEmail: string,
-  personalEmail: string,
 ): Promise<Result<InviteSuccessData>> {
   if (!workEmail || !workEmail.endsWith(WORK_EMAIL_DOMAIN)) {
     return err(`A valid work email (${WORK_EMAIL_DOMAIN}) is required.`);
-  }
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (personalEmail && !emailRegex.test(personalEmail)) {
-    return err("Invalid personal email format.");
   }
 
   try {
@@ -123,14 +113,13 @@ export async function inviteEmployee(
           "An invitation already exists for this user. Use the resend function.",
         );
       }
-      const targetEmail = personalEmail || workEmail;
       const result = await resetInvitation(
         workEmail,
         existingUser.id,
         ROLES.EMPLOYEE,
         session.user.id,
       );
-      fireInviteEmail(targetEmail, workEmail, result.inviteUrl);
+      fireInviteEmail(workEmail, workEmail, result.inviteUrl);
       return ok({ inviteUrl: result.inviteUrl });
     }
 
@@ -140,13 +129,12 @@ export async function inviteEmployee(
       );
     }
 
-    const targetEmail = personalEmail || workEmail;
     const result = await createUserAndInvite(
       workEmail,
       ROLES.EMPLOYEE,
       session.user.id,
     );
-    fireInviteEmail(targetEmail, workEmail, result.inviteUrl);
+    fireInviteEmail(workEmail, workEmail, result.inviteUrl);
     return ok({ inviteUrl: result.inviteUrl });
   } catch (error) {
     const message =

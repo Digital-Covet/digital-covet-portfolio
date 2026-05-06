@@ -7,29 +7,37 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  employee
+  admin
+  superadmin
+}
+
 model User {
-  id               String       @id
-  name             String
-  email            String
-  emailVerified    Boolean      @default(false)
-  image            String?
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
-  twoFactorEnabled Boolean?     @default(false)
-  passwordChanged  Boolean      @default(false)
-  role             String?
-  banned           Boolean?     @default(false)
-  banReason        String?
-  banExpires       DateTime?
-  departmentId     String?
-  sessions         Session[]
-  accounts         Account[]
-  twofactors       TwoFactor[]
-  caseStudies      CaseStudy[]  @relation("CaseStudyCreatedBy")
-  shareLinks       ShareLink[]  @relation("ShareLinkCreatedBy")
-  invitations      Invitation[] @relation("InvitationInvitedBy")
+  id                  String       @id
+  name                String
+  email               String
+  emailVerified       Boolean      @default(false)
+  image               String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  twoFactorEnabled    Boolean?     @default(false)
+  passwordChanged     Boolean      @default(false)
+  role                UserRole     @default(employee)
+  banned              Boolean?     @default(false)
+  banReason           String?
+  banExpires          DateTime?
+  departmentId        String?
+  sessions            Session[]
+  accounts            Account[]
+  twofactors          TwoFactor[]
+  caseStudies         CaseStudy[]  @relation("CaseStudyCreatedBy")
+  shareLinks          ShareLink[]  @relation("ShareLinkCreatedBy")
+  invitations         Invitation[] @relation("InvitationInvitedBy")
+  assignedInvitations Invitation[] @relation("InvitationUser")
 
   @@unique([email])
+  @@index([departmentId])
   @@map("user")
 }
 
@@ -47,6 +55,7 @@ model Session {
 
   @@unique([token])
   @@index([userId])
+  @@index([userId, expiresAt])
   @@map("session")
 }
 
@@ -79,6 +88,7 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
+  @@index([identifier, expiresAt])
   @@map("verification")
 }
 
@@ -90,7 +100,6 @@ model TwoFactor {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   verified    Boolean? @default(true)
 
-  @@index([secret])
   @@index([userId])
   @@map("twoFactor")
 }
@@ -99,10 +108,12 @@ model Industry {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now()) @map("created_at")
   name      String
+  sectorId  String?  @map("sector_id")
 
-  caseStudies CaseStudy[]
-  clients     Client[]
+  sector        Sector?        @relation(fields: [sectorId], references: [id])
+  keyBusinesses KeyBusiness[]
 
+  @@index([sectorId])
   @@map("industries")
 }
 
@@ -115,12 +126,11 @@ enum CaseStudyStatus {
 model Client {
   id         String   @id @default(uuid())
   createdAt  DateTime @default(now()) @map("created_at")
-  industryId String?  @map("industry_id")
   logoUrl    String?  @map("logo_url")
   name       String
   updatedAt  DateTime @default(now()) @map("updated_at")
 
-  industry    Industry?   @relation(fields: [industryId], references: [id])
+  clientKeyBusinesses ClientKeyBusiness[]
   caseStudies CaseStudy[]
 
   @@map("clients")
@@ -146,6 +156,42 @@ model Service {
   @@map("services")
 }
 
+model Sector {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+
+  industries Industry[]
+
+  @@map("sectors")
+}
+
+model KeyBusiness {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+  industryId String?  @map("industry_id")
+
+  industry    Industry?   @relation(fields: [industryId], references: [id])
+  caseStudyKeyBusinesses CaseStudyKeyBusiness[]
+  clientKeyBusinesses    ClientKeyBusiness[]
+
+  @@index([industryId])
+  @@map("key_businesses")
+}
+
+model ClientKeyBusiness {
+  clientId     String @map("client_id")
+  keyBusinessId String @map("key_business_id")
+
+  client     Client     @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  keyBusiness KeyBusiness @relation(fields: [keyBusinessId], references: [id], onDelete: Cascade)
+
+  @@id([clientId, keyBusinessId])
+  @@index([clientId])
+  @@map("client_key_businesses")
+}
+
 model CaseStudy {
   id                String          @id @default(uuid())
   attachmentUrls    Json?           @map("attachment_urls")
@@ -156,7 +202,6 @@ model CaseStudy {
   description       String?
   galleryUrls       String[]        @map("gallery_urls")
   heroImageUrl      String?         @map("hero_image_url")
-  industryId        String?         @map("industry_id")
   projectDate       DateTime?       @map("project_date")
   results           String?
   slug              String          @unique
@@ -171,11 +216,14 @@ model CaseStudy {
 
   client              Client?             @relation(fields: [clientId], references: [id])
   createdByUser       User?               @relation("CaseStudyCreatedBy", fields: [createdBy], references: [id])
-  industry            Industry?           @relation(fields: [industryId], references: [id])
   caseStudyCategories CaseStudyCategory[]
+  caseStudyKeyBusinesses CaseStudyKeyBusiness[]
   caseStudyMetrics    CaseStudyMetric[]
   caseStudyServices   CaseStudyService[]
 
+  @@index([createdBy])
+  @@index([createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
   @@map("case_studies")
 }
 
@@ -187,6 +235,7 @@ model CaseStudyCategory {
   workCategory WorkCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 
   @@id([caseStudyId, categoryId])
+  @@index([caseStudyId])
   @@map("case_study_categories")
 }
 
@@ -200,6 +249,7 @@ model CaseStudyMetric {
 
   caseStudy CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
 
+  @@index([caseStudyId])
   @@map("case_study_metrics")
 }
 
@@ -211,7 +261,20 @@ model CaseStudyService {
   service   Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
   @@id([caseStudyId, serviceId])
+  @@index([caseStudyId])
   @@map("case_study_services")
+}
+
+model CaseStudyKeyBusiness {
+  caseStudyId    String @map("case_study_id")
+  keyBusinessId  String @map("key_business_id")
+
+  caseStudy    CaseStudy    @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  keyBusiness  KeyBusiness  @relation(fields: [keyBusinessId], references: [id], onDelete: Cascade)
+
+  @@id([caseStudyId, keyBusinessId])
+  @@index([caseStudyId])
+  @@map("case_study_key_businesses")
 }
 
 model ShareLink {
@@ -219,10 +282,12 @@ model ShareLink {
   createdAt            DateTime  @default(now()) @map("created_at")
   createdBy            String?   @map("created_by")
   expiresAt            DateTime? @map("expires_at")
-  filterCategoryIds    String[]  @map("filter_category_ids")
-  filterClientIds      String[]  @map("filter_client_ids")
-  filterIndustryIds    String[]  @map("filter_industry_ids")
-  filterServiceIds     String[]  @map("filter_service_ids")
+  filterCategoryIds       String[]  @map("filter_category_ids")
+  filterClientIds         String[]  @map("filter_client_ids")
+  filterSectorIds        String[]  @map("filter_sector_ids")
+  filterIndustryIds      String[]  @map("filter_industry_ids")
+  filterKeyBusinessIds   String[]  @map("filter_key_business_ids")
+  filterServiceIds       String[]  @map("filter_service_ids")
   maxViews             Int?      @map("max_views")
   name                 String
   passwordHash         String    @map("password_hash")
@@ -255,13 +320,16 @@ model Invitation {
   id        String    @id @default(cuid())
   email     String
   token     String    @unique
-  role      String    @default("employee")
+  role      UserRole  @default(employee)
   expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime  @default(now()) @map("created_at")
   invitedBy String?   @map("invited_by")
+  userId    String?   @map("user_id")
 
   invitedByUser User? @relation("InvitationInvitedBy", fields: [invitedBy], references: [id])
+  user          User? @relation("InvitationUser", fields: [userId], references: [id])
 
+  @@index([email])
   @@map("invitations")
 }

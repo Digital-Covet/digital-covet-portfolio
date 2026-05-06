@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { prisma } from "@/db";
 import { auth } from "@/lib/auth";
 import { buildInviteUrl, INVITATION_EXPIRY_DAYS, ROLES } from "@/lib/constants";
+import type { UserRole } from "@/types/auth.types";
 
 function generateSecurePassword(): string {
   const charset =
@@ -51,7 +52,7 @@ export async function createUserAndInvite(
       data: { emailVerified: true, passwordChanged: false },
     }),
     prisma.invitation.create({
-      data: { email: workEmail, token, role, invitedBy, expiresAt },
+      data: { email: workEmail, token, role: role as UserRole, invitedBy, expiresAt },
     }),
   ]);
 
@@ -76,7 +77,7 @@ export async function resetInvitation(
       data: { usedAt: new Date() },
     }),
     prisma.invitation.create({
-      data: { email: workEmail, token, role, invitedBy, expiresAt },
+      data: { email: workEmail, token, role: role as UserRole, invitedBy, expiresAt },
     }),
     prisma.user.update({
       where: { id: userId },

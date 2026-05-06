@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { deleteCaseStudy, listCaseStudies } from "@/actions/content";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,6 +20,7 @@ export default function CaseStudiesListPage() {
   const [studies, setStudies] = useState<CaseStudyListItem[]>([]);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | "draft" | "published">("all");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const load = useCallback(
     () =>
@@ -38,14 +40,16 @@ export default function CaseStudiesListPage() {
     return true;
   });
 
-  async function onDelete(id: string) {
-    if (!confirm("Delete this case study?")) return;
+  async function handleDelete() {
+    if (!deleteId) return;
     try {
-      await deleteCaseStudy({ id });
+      await deleteCaseStudy({ id: deleteId });
       toast.success("Deleted");
       load();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setDeleteId(null);
     }
   }
 
@@ -137,7 +141,7 @@ export default function CaseStudiesListPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => onDelete(s.id)}
+                onClick={() => setDeleteId(s.id)}
               >
                 <TrashIcon size={16} />
               </Button>
@@ -150,6 +154,19 @@ export default function CaseStudiesListPage() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete this case study.
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

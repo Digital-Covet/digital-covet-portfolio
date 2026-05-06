@@ -1,0 +1,10 @@
+# Files / Directories listed here will not be taken for the commands org:push , org:status 
+
+crm/widgets/*/node_modules/
+crm/widgets/*/server/
+crm/widgets/*/cert.pem
+crm/widgets/*/key.pem
+crm/widgets/*/package-lock.json
+crm/widgets/*/package.json
+crm/widgets/*/plugin-manifest.json
+crm/widgets/ZET-debug.log

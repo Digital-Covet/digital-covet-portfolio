@@ -4,6 +4,8 @@ import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createTaxonomy, deleteTaxonomy } from "@/actions/content";
+import { useRouter } from "next/navigation";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -18,7 +20,9 @@ interface TaxonomyListProps {
 }
 
 export function TaxonomyList({ title, type, items }: TaxonomyListProps) {
+  const router = useRouter();
   const [name, setName] = useState("");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   async function add() {
     if (!name.trim()) return;
@@ -26,17 +30,22 @@ export function TaxonomyList({ title, type, items }: TaxonomyListProps) {
       await createTaxonomy({ type, name: name.trim() });
       setName("");
       toast.success(`${name.trim()} added`);
+      router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to create");
     }
   }
 
-  async function remove(id: string) {
+  async function handleDelete() {
+    if (!deleteId) return;
     try {
-      await deleteTaxonomy({ type, id });
+      await deleteTaxonomy({ type, id: deleteId });
       toast.success("Deleted");
+      router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Failed to delete");
+    } finally {
+      setDeleteId(null);
     }
   }
 
@@ -64,7 +73,7 @@ export function TaxonomyList({ title, type, items }: TaxonomyListProps) {
               className="flex items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-muted"
             >
               <span>{i.name}</span>
-              <button onClick={() => remove(i.id)}>
+              <button onClick={() => setDeleteId(i.id)}>
                 <TrashIcon size={16} />
               </button>
             </div>
@@ -74,6 +83,19 @@ export function TaxonomyList({ title, type, items }: TaxonomyListProps) {
           )}
         </div>
       </CardContent>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete this item.
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

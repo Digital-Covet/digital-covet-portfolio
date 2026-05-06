@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { deleteClient, upsertClient } from "@/actions/content";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { FileUploader, ImagePreview } from "@/components/file-uploader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +43,7 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [editing, setEditing] = useState<EditingClient | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   async function save() {
     if (!editing?.name) return;
@@ -62,15 +64,17 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
     });
   }
 
-  async function remove(id: string) {
-    if (!confirm("Delete client?")) return;
+  async function handleDelete() {
+    if (!deleteId) return;
     startTransition(async () => {
       try {
-        await deleteClient({ id });
+        await deleteClient({ id: deleteId });
         toast.success("Deleted");
         router.refresh();
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Failed");
+      } finally {
+        setDeleteId(null);
       }
     });
   }
@@ -125,7 +129,11 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
                 disabled={isPending}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue placeholder="Select industry">
+                    {editing.industryId
+                      ? taxonomies.industries.find((i) => i.id === editing.industryId)?.name
+                      : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">— None —</SelectItem>
@@ -206,7 +214,7 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => remove(c.id)}
+                onClick={() => setDeleteId(c.id)}
                 disabled={isPending}
               >
                 <TrashIcon size={16} />
@@ -220,6 +228,19 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+          <AlertDialogDescription>
+            This action cannot be undone. This will permanently delete this client.
+          </AlertDialogDescription>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

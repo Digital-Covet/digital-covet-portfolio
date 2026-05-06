@@ -50,7 +50,11 @@ export function FileUploader({
           dataBase64,
           contentType: file.type || "application/octet-stream",
         });
-        onUploaded({ url: res.url, name: file.name });
+        if (!res.ok) {
+          toast.error(res.error.message);
+          return;
+        }
+        onUploaded({ url: res.data.url, name: file.name });
         toast.success("Uploaded");
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Upload failed");

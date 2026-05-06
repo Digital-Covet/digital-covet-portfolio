@@ -40,9 +40,9 @@ export function TagSelector({
     <div className="space-y-2">
       <Label>{label}</Label>
       {items.length === 0 ? (
-        <div className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground">
           None defined yet — add some in Taxonomies.
-        </div>
+        </p>
       ) : (
         <div className="flex flex-wrap gap-2">
           {items.map((it) => (

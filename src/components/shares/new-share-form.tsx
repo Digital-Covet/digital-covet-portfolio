@@ -19,10 +19,14 @@ import { Label } from "@/components/ui/label";
 interface TaxonomyItem {
   id: string;
   name: string;
+  sectorId?: string | null;
+  industryId?: string | null;
 }
 
 interface Taxonomies {
+  sectors: TaxonomyItem[];
   industries: TaxonomyItem[];
+  keyBusinesses: TaxonomyItem[];
   categories: TaxonomyItem[];
   services: TaxonomyItem[];
   clients: TaxonomyItem[];
@@ -113,7 +117,9 @@ export function NewShareForm({ taxonomies, studies }: NewShareFormProps) {
   const [expiresAt, setExpiresAt] = useState("");
   const [maxViews, setMaxViews] = useState("");
   const [filterMode, setFilterMode] = useState<"filter" | "specific">("filter");
+  const [sectors, setSectors] = useState<string[]>([]);
   const [industries, setIndustries] = useState<string[]>([]);
+  const [keyBusinesses, setKeyBusinesses] = useState<string[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [services, setServices] = useState<string[]>([]);
   const [clients, setClients] = useState<string[]>([]);
@@ -131,20 +137,43 @@ export function NewShareForm({ taxonomies, studies }: NewShareFormProps) {
     }
     setSubmitting(true);
     try {
-      const res = await createShare({
+      let filterSectorIds: string[] = sectors;
+    let filterIndustryIds: string[] = industries;
+
+    if (filterMode === "filter" && keyBusinesses.length > 0) {
+      const selectedKBs = taxonomies.keyBusinesses.filter(kb => keyBusinesses.includes(kb.id));
+      const relatedIndustries = [...new Set(selectedKBs.map(kb => kb.industryId).filter((id): id is string => !!id))];
+      const relatedSectors = [...new Set(
+        selectedKBs
+          .map(kb => taxonomies.industries.find(i => i.id === kb.industryId))
+          .filter((i): i is TaxonomyItem => !!i)
+          .map(i => i.sectorId)
+          .filter((id): id is string => !!id)
+      )];
+      filterIndustryIds = [...industries, ...relatedIndustries];
+      filterSectorIds = [...sectors, ...relatedSectors];
+    }
+
+    const res = await createShare({
         name: name.trim(),
         password,
-        recipient_name: recipientName || null,
-        recipient_email: recipientEmail || null,
-        expires_at: expiresAt ? new Date(expiresAt).toISOString() : null,
-        max_views: maxViews ? Number(maxViews) : null,
-        filter_industry_ids: filterMode === "filter" ? industries : [],
-        filter_category_ids: filterMode === "filter" ? categories : [],
-        filter_service_ids: filterMode === "filter" ? services : [],
-        filter_client_ids: filterMode === "filter" ? clients : [],
-        specific_case_study_ids: filterMode === "specific" ? specific : [],
+        recipientName: recipientName || null,
+        recipientEmail: recipientEmail || null,
+        expiresAt: expiresAt ? new Date(expiresAt).toISOString() : null,
+        maxViews: maxViews ? Number(maxViews) : null,
+        filterSectorIds: filterMode === "filter" ? filterSectorIds : [],
+        filterIndustryIds: filterMode === "filter" ? filterIndustryIds : [],
+        filterKeyBusinessIds: filterMode === "filter" ? keyBusinesses : [],
+        filterCategoryIds: filterMode === "filter" ? categories : [],
+        filterServiceIds: filterMode === "filter" ? services : [],
+        filterClientIds: filterMode === "filter" ? clients : [],
+        specificCaseStudyIds: filterMode === "specific" ? specific : [],
       });
-      const url = `${window.location.origin}${res.url}`;
+      if (!res.ok) {
+        toast.error(res.error.message);
+        return;
+      }
+      const url = `${window.location.origin}${res.data.url}`;
       setCreated({ url, password });
     } catch (e) {
       toast.error(
@@ -336,10 +365,41 @@ export function NewShareForm({ taxonomies, studies }: NewShareFormProps) {
             {filterMode === "filter" ? (
               <div className="space-y-4">
                 <Pills
+                  label="Sectors"
+                  items={taxonomies.sectors}
+                  selected={sectors}
+                  onToggle={(id) => toggle(sectors, setSectors, id)}
+                />
+                <Pills
                   label="Industries"
                   items={taxonomies.industries}
                   selected={industries}
                   onToggle={(id) => toggle(industries, setIndustries, id)}
+                />
+                <Pills
+                  label="Key Businesses"
+                  items={taxonomies.keyBusinesses}
+                  selected={keyBusinesses}
+                  onToggle={(id) => {
+                    const isSelected = keyBusinesses.includes(id);
+                    if (isSelected) {
+                      toggle(keyBusinesses, setKeyBusinesses, id);
+                    } else {
+                      const kb = taxonomies.keyBusinesses.find(k => k.id === id);
+                      if (kb?.industryId) {
+                        setKeyBusinesses([...keyBusinesses, id]);
+                        if (!industries.includes(kb.industryId)) {
+                          setIndustries([...industries, kb.industryId]);
+                          const ind = taxonomies.industries.find(i => i.id === kb.industryId);
+                          if (ind?.sectorId && !sectors.includes(ind.sectorId)) {
+                            setSectors([...sectors, ind.sectorId]);
+                          }
+                        }
+                      } else {
+                        toggle(keyBusinesses, setKeyBusinesses, id);
+                      }
+                    }
+                  }}
                 />
                 <Pills
                   label="Work categories"

@@ -1,4 +1,5 @@
 import { PlusIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
+
 import { FileUploader, ImagePreview } from "@/components/file-uploader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +15,8 @@ import {
 import type {
   Attachment,
   Client,
+  IndustryWithSector,
+  KeyBusinessWithIndustry,
   Metric,
   Taxonomy,
 } from "@/types/case-studies";
@@ -24,15 +27,21 @@ type BasicsProps = {
   title: string;
   slug: string;
   clientId: string | null;
+  sectorId: string | null;
   industryId: string | null;
+  keyBusinessIds: string[];
   projectDate: string | null;
   videoEmbedUrl: string | null;
   clients: Client[];
-  industries: Taxonomy[];
+  sectors: Taxonomy[];
+  industries: IndustryWithSector[];
+  keyBusinesses: KeyBusinessWithIndustry[];
   onTitleChange: (title: string) => void;
   onSlugChange: (slug: string) => void;
   onClientChange: (id: string | null) => void;
+  onSectorChange: (id: string | null) => void;
   onIndustryChange: (id: string | null) => void;
+  onKeyBusinessIdsChange: (ids: string[]) => void;
   onProjectDateChange: (date: string | null) => void;
   onVideoEmbedChange: (url: string | null) => void;
 };
@@ -41,15 +50,21 @@ export function BasicsSection({
   title,
   slug,
   clientId,
+  sectorId,
   industryId,
+  keyBusinessIds,
   projectDate,
   videoEmbedUrl,
   clients,
+  sectors,
   industries,
+  keyBusinesses,
   onTitleChange,
   onSlugChange,
   onClientChange,
+  onSectorChange,
   onIndustryChange,
+  onKeyBusinessIdsChange,
   onProjectDateChange,
   onVideoEmbedChange,
 }: BasicsProps) {
@@ -67,6 +82,7 @@ export function BasicsSection({
               onChange={(e) => onTitleChange(e.target.value)}
             />
           </div>
+
           <div className="space-y-2">
             <Label>Slug</Label>
             <Input
@@ -74,6 +90,7 @@ export function BasicsSection({
               onChange={(e) => onSlugChange(slugify(e.target.value))}
             />
           </div>
+
           <div className="space-y-2">
             <Label>Client</Label>
             <Select
@@ -93,25 +110,102 @@ export function BasicsSection({
               </SelectContent>
             </Select>
           </div>
+
           <div className="space-y-2">
-            <Label>Industry</Label>
+            <Label>Sector</Label>
             <Select
-              value={industryId ?? "none"}
-              onValueChange={(v) => onIndustryChange(v === "none" ? null : v)}
+              value={sectorId ?? "none"}
+              onValueChange={(v) => {
+                onSectorChange(v === "none" ? null : v);
+                onIndustryChange(null);
+                onKeyBusinessIdsChange([]);
+              }}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>
+                  {sectorId && sectorId !== "none"
+                    ? sectors.find((s) => s.id === sectorId)?.name
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">— None —</SelectItem>
-                {industries.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
+                {sectors.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.name}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
+
+          <div className="space-y-2">
+            <Label>Industry</Label>
+            <Select
+              value={industryId ?? "none"}
+              onValueChange={(v) => {
+                onIndustryChange(v === "none" ? null : v);
+                onKeyBusinessIdsChange([]);
+              }}
+              disabled={!sectorId}
+            >
+              <SelectTrigger>
+                <SelectValue>
+                  {industryId && industryId !== "none"
+                    ? industries.find((i) => i.id === industryId)?.name
+                    : undefined}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— None —</SelectItem>
+                {industries
+                  .filter((i) => !sectorId || i.sectorId === sectorId)
+                  .map((i) => (
+                    <SelectItem key={i.id} value={i.id}>
+                      {i.name}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Key Business</Label>
+            <div className="space-y-2 rounded-md border p-3">
+              {industryId
+                ? keyBusinesses
+                    .filter((k) => k.industryId === industryId)
+                    .map((k) => (
+                      <label
+                        key={k.id}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={keyBusinessIds.includes(k.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              onKeyBusinessIdsChange([...keyBusinessIds, k.id]);
+                            } else {
+                              onKeyBusinessIdsChange(
+                                keyBusinessIds.filter((id) => id !== k.id),
+                              );
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        {k.name}
+                      </label>
+                    ))
+                : null}
+              {!industryId && (
+                <p className="text-xs text-muted-foreground">
+                  Select an industry first
+                </p>
+              )}
+            </div>
+          </div>
+
           <div className="space-y-2">
             <Label>Project date</Label>
             <Input
@@ -120,10 +214,12 @@ export function BasicsSection({
               onChange={(e) => onProjectDateChange(e.target.value || null)}
             />
           </div>
+
           <div className="space-y-2">
-            <Label>Video embed URL (YouTube/Vimeo)</Label>
+            <Label>Video embed URL (YouTube / Vimeo)</Label>
             <Input
               value={videoEmbedUrl ?? ""}
+              placeholder="https://www.youtube.com/embed/…"
               onChange={(e) => onVideoEmbedChange(e.target.value || null)}
             />
           </div>
@@ -217,12 +313,13 @@ export function MediaSection({
             />
           </div>
         </div>
+
         <div className="space-y-2">
           <Label>Gallery</Label>
           <div className="flex flex-wrap items-center gap-3">
             {galleryUrls.map((u, i) => (
               <ImagePreview
-                key={u + i}
+                key={`${u}-${i}`}
                 url={u}
                 onRemove={() => onGalleryRemove(i)}
               />
@@ -235,12 +332,13 @@ export function MediaSection({
             />
           </div>
         </div>
+
         <div className="space-y-2">
           <Label>Attachments (PDFs, decks)</Label>
           <div className="space-y-2">
             {attachments.map((a, i) => (
               <div
-                key={a.url + i}
+                key={`${a.url}-${i}`}
                 className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm"
               >
                 <a
@@ -269,15 +367,14 @@ export function MediaSection({
   );
 }
 
+type StoryKey = "description" | "challenge" | "solution" | "results";
+
 type StoryProps = {
   description: string | null;
   challenge: string | null;
   solution: string | null;
   results: string | null;
-  onUpdate: <K extends "description" | "challenge" | "solution" | "results">(
-    key: K,
-    value: string | null,
-  ) => void;
+  onUpdate: <K extends StoryKey>(key: K, value: string | null) => void;
 };
 
 export function StorySection({
@@ -360,22 +457,23 @@ export function MetricsSection({
             </Button>
           </div>
         ))}
+
         <Button variant="outline" size="sm" onClick={onAdd}>
-          <PlusIcon size={16} className="mr-2" /> Add metric
+          <PlusIcon size={16} className="mr-2" />
+          Add metric
         </Button>
       </CardContent>
     </Card>
   );
 }
 
+type TestimonialKey = "quote" | "author" | "title";
+
 type TestimonialProps = {
   quote: string | null;
   author: string | null;
   title: string | null;
-  onUpdate: <K extends "quote" | "author" | "title">(
-    key: K,
-    value: string | null,
-  ) => void;
+  onUpdate: <K extends TestimonialKey>(key: K, value: string | null) => void;
 };
 
 export function TestimonialSection({

@@ -4,7 +4,16 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { deleteClient, upsertClient } from "@/actions/content";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import type { Taxonomies } from "@/types/case-studies";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { FileUploader, ImagePreview } from "@/components/file-uploader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,25 +27,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface Taxonomies {
-  industries: { id: string; name: string }[];
-  categories: any[];
-  services: any[];
-  clients: {
-    id: string;
-    name: string;
-    logoUrl: string | null;
-    industryId: string | null;
-  }[];
-}
-
 type EditingClient =
   | Taxonomies["clients"][number]
   | {
       id?: string;
       name: string;
       logoUrl: string | null;
-      industryId: string | null;
     };
 
 export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
@@ -53,7 +49,6 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
           id: editing.id,
           name: editing.name,
           logoUrl: editing.logoUrl ?? null,
-          industryId: editing.industryId ?? null,
         });
         toast.success("Saved");
         setEditing(null);
@@ -90,7 +85,7 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
         </div>
         <Button
           onClick={() =>
-            setEditing({ name: "", logoUrl: null, industryId: null })
+            setEditing({ name: "", logoUrl: null })
           }
           disabled={isPending}
         >
@@ -115,35 +110,6 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
                 }
                 disabled={isPending}
               />
-            </div>
-            <div className="space-y-2">
-              <Label>Industry</Label>
-              <Select
-                value={editing.industryId ?? "none"}
-                onValueChange={(v) =>
-                  setEditing({
-                    ...editing,
-                    industryId: v === "none" ? null : v,
-                  })
-                }
-                disabled={isPending}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select industry">
-                    {editing.industryId
-                      ? taxonomies.industries.find((i) => i.id === editing.industryId)?.name
-                      : undefined}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">— None —</SelectItem>
-                  {taxonomies.industries.map((i) => (
-                    <SelectItem key={i.id} value={i.id}>
-                      {i.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label>Logo</Label>
@@ -196,10 +162,6 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
               )}
               <div>
                 <div className="font-medium">{c.name}</div>
-                <div className="text-xs text-muted-foreground">
-                  {taxonomies.industries.find((i) => i.id === c.industryId)
-                    ?.name ?? "—"}
-                </div>
               </div>
             </div>
             <div className="flex gap-1">
@@ -229,14 +191,20 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
         )}
       </div>
 
-      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+      <AlertDialog
+        open={!!deleteId}
+        onOpenChange={(open) => !open && setDeleteId(null)}
+      >
         <AlertDialogContent>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete this client.
+            This action cannot be undone. This will permanently delete this
+            client.
           </AlertDialogDescription>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeleteId(null)}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

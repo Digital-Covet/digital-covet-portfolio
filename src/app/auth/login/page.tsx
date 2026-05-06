@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { LoginForm } from "@/components/login-form";
 import { authClient } from "@/lib/auth-client";
+import { ROUTES } from "@/lib/constants";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,10 +21,7 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const response = await authClient.signIn.email({
-        email,
-        password,
-      });
+      const response = await authClient.signIn.email({ email, password });
 
       if (response.error) {
         toast.error(response.error.message ?? "Sign-in failed.");
@@ -32,17 +30,16 @@ export default function LoginPage() {
 
       const data = response.data as {
         twoFactorRedirect?: boolean;
-        user?: unknown;
-        session?: unknown;
       } | null;
 
+      // ─── CHANGE M2: Destination routes use ROUTES constants, not raw strings
       if (data?.twoFactorRedirect === true) {
-        router.push("/auth/verify-2fa");
+        router.push(ROUTES.VERIFY_2FA);
         return;
       }
 
       toast.success("Signed in successfully!");
-      router.push("/dashboard");
+      router.push(ROUTES.DASHBOARD);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "An unexpected error occurred.";

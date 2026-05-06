@@ -201,9 +201,9 @@ export default function SharePage({
               )}
               <div className="p-5">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  {s.industry?.name && (
-                    <Badge variant="secondary">{s.industry.name}</Badge>
-                  )}
+                  {s.keyBusinesses.map((kb) => (
+                    <Badge key={kb.name} variant="secondary">{kb.name}</Badge>
+                  ))}
                   {s.client?.name && <span>· {s.client.name}</span>}
                 </div>
                 <h3 className="mt-2 font-semibold">{s.title}</h3>
@@ -262,9 +262,9 @@ function CaseStudyDetail({
       <div className="mx-auto max-w-4xl px-6 py-12">
         {}
         <div className="flex items-center gap-3 text-xs">
-          {study.industry?.name && (
-            <Badge variant="secondary">{study.industry.name}</Badge>
-          )}
+          {study.keyBusinesses.map((kb) => (
+            <Badge key={kb.name} variant="secondary">{kb.name}</Badge>
+          ))}
           {study.client?.name && (
             <span className="text-muted-foreground">{study.client.name}</span>
           )}

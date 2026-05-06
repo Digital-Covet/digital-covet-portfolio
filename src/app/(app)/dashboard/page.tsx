@@ -78,32 +78,34 @@ ChartJS.register(
 /*  Types                                                              */
 /* ------------------------------------------------------------------ */
 
-interface CaseStudyData {
+interface CaseStudyListItemData {
   id: string;
   title: string;
-  status: string;
+  status: "draft" | "published" | "archived";
   createdAt: Date;
   updatedAt: Date;
-  industryId: string | null;
   clientId: string | null;
-  client: { name: string; logoUrl: string | null } | null;
-  industry: { name: string } | null;
+  heroImageUrl: string | null;
+  client: { name: string } | null;
+  keyBusinesses: { name: string; industryId: string }[];
 }
 
-interface ShareLinkData {
+interface ShareLinkListItemData {
   id: string;
   name: string;
-  createdAt: Date;
-  revoked: boolean;
-  expiresAt: Date | null;
-  maxViews: number | null;
   recipientName: string | null;
   recipientEmail: string | null;
-  filterIndustryIds: string[] | null;
-  filterClientIds: string[] | null;
+  expiresAt: Date | null;
+  maxViews: number | null;
+  revoked: boolean;
+  createdAt: Date;
+  filterKeyBusinessIds: string[];
+  filterCategoryIds: string[];
+  filterServiceIds: string[];
+  filterClientIds: string[];
 }
 
-interface ShareViewData {
+interface ShareViewListItemData {
   id: string;
   shareLinkId: string;
   viewedAt: Date;
@@ -113,6 +115,8 @@ interface TaxonomyData {
   industries: { id: string; name: string }[];
   categories: { id: string; name: string }[];
   services: { id: string; name: string }[];
+  sectors: { id: string; name: string }[];
+  keyBusinesses: { id: string; name: string }[];
   clients: { id: string; name: string }[];
 }
 
@@ -130,19 +134,21 @@ type DateRange = "7d" | "30d" | "90d" | "1y" | "all";
 type Granularity = "Daily" | "Weekly";
 
 export default function Page() {
-  const [studies, setStudies] = useState<CaseStudyData[]>([]);
-  const [shares, setShares] = useState<ShareLinkData[]>([]);
-  const [views, setViews] = useState<ShareViewData[]>([]);
+  const [studies, setStudies] = useState<CaseStudyListItemData[]>([]);
+  const [shares, setShares] = useState<ShareLinkListItemData[]>([]);
+  const [views, setViews] = useState<ShareViewListItemData[]>([]);
   const [tax, setTax] = useState<TaxonomyData>({
     industries: [],
     categories: [],
     services: [],
+    sectors: [],
+    keyBusinesses: [],
     clients: [],
   });
   const [loading, setLoading] = useState(true);
 
   const [dateRange, setDateRange] = useState<DateRange>("30d");
-  const [industryId, setIndustryId] = useState<string>("all");
+  const [keyBusinessId, setKeyBusinessId] = useState<string>("all");
   const [clientId, setClientId] = useState<string>("all");
   const [granularity, setGranularity] = useState<Granularity>("Daily");
 
@@ -298,10 +304,26 @@ export default function Page() {
       listAllShareViews(),
     ])
       .then(([s, sh, t, v]) => {
-        setStudies(s.studies as CaseStudyData[]);
-        setShares(sh.shares as ShareLinkData[]);
-        setTax(t as TaxonomyData);
-        setViews(v.views as ShareViewData[]);
+        if (!s.ok) {
+          console.error(s.error.message);
+          return;
+        }
+        if (!sh.ok) {
+          console.error(sh.error.message);
+          return;
+        }
+        if (!t.ok) {
+          console.error(t.error.message);
+          return;
+        }
+        if (!v.ok) {
+          console.error(v.error.message);
+          return;
+        }
+        setStudies(s.data.studies as CaseStudyListItemData[]);
+        setShares(sh.data.shares as ShareLinkListItemData[]);
+        setTax(t.data as TaxonomyData);
+        setViews(v.data.views as ShareViewListItemData[]);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -321,8 +343,9 @@ export default function Page() {
   }, [dateRange]);
 
   const filteredStudies = useMemo(() => {
+    if (!studies) return [];
     return studies.filter((study) => {
-      if (industryId !== "all" && study.industryId !== industryId) return false;
+      if (keyBusinessId !== "all" && !study.keyBusinesses.some((k) => k.industryId === keyBusinessId)) return false;
       if (clientId !== "all" && study.clientId !== clientId) return false;
       if (rangeStart) {
         const ref = study.updatedAt ?? study.createdAt;
@@ -330,14 +353,15 @@ export default function Page() {
       }
       return true;
     });
-  }, [studies, industryId, clientId, rangeStart]);
+  }, [studies, keyBusinessId, clientId, rangeStart]);
 
   const filteredShares = useMemo(() => {
+    if (!shares) return [];
     return shares.filter((s) => {
       if (rangeStart && s.createdAt < rangeStart) return false;
-      if (industryId !== "all") {
-        const arr: string[] = s.filterIndustryIds ?? [];
-        if (arr.length && !arr.includes(industryId)) return false;
+      if (keyBusinessId !== "all") {
+        const arr: string[] = s.filterKeyBusinessIds ?? [];
+        if (arr.length && !arr.includes(keyBusinessId)) return false;
       }
       if (clientId !== "all") {
         const arr: string[] = s.filterClientIds ?? [];
@@ -345,7 +369,7 @@ export default function Page() {
       }
       return true;
     });
-  }, [shares, industryId, clientId, rangeStart]);
+  }, [shares, keyBusinessId, clientId, rangeStart]);
 
   const filteredShareIds = useMemo(
     () => new Set(filteredShares.map((s) => s.id)),
@@ -353,6 +377,7 @@ export default function Page() {
   );
 
   const filteredViews = useMemo(() => {
+    if (!views) return [];
     return views.filter((v) => {
       if (!filteredShareIds.has(v.shareLinkId)) return false;
       if (rangeStart && v.viewedAt < rangeStart) return false;
@@ -378,11 +403,13 @@ export default function Page() {
   }, [filteredStudies, filteredShares, filteredViews]);
 
   /* ---- breakdowns ---- */
-  const industryBreakdown = useMemo(() => {
+  const keyBusinessBreakdown = useMemo(() => {
     const map = new Map<string, number>();
     for (const s of filteredStudies) {
-      const name = s.industry?.name ?? "Uncategorized";
-      map.set(name, (map.get(name) ?? 0) + 1);
+      for (const kb of s.keyBusinesses) {
+        const name = kb.name;
+        map.set(name, (map.get(name) ?? 0) + 1);
+      }
     }
     return Array.from(map.entries())
       .sort((a, b) => b[1] - a[1])
@@ -390,10 +417,7 @@ export default function Page() {
   }, [filteredStudies]);
 
   const clientBreakdown = useMemo(() => {
-    const map = new Map<
-      string,
-      { name: string; logo: string | null; count: number }
-    >();
+    const map = new Map<string, { name: string; count: number }>();
     for (const s of filteredStudies) {
       const name = s.client?.name;
       if (!name) continue;
@@ -402,7 +426,6 @@ export default function Page() {
       else
         map.set(name, {
           name,
-          logo: s.client?.logoUrl ?? null,
           count: 1,
         });
     }
@@ -514,7 +537,7 @@ export default function Page() {
         type: "case_study",
         action: "created",
         title: s.title,
-        subtitle: s.client?.name ?? s.industry?.name ?? undefined,
+        subtitle: s.client?.name ?? s.keyBusinesses.map((k) => k.name).join(", ") ?? undefined,
         at: s.createdAt,
         href: `/case-studies/${s.id}`,
       });
@@ -524,7 +547,7 @@ export default function Page() {
           type: "case_study",
           action: "updated",
           title: s.title,
-          subtitle: s.client?.name ?? s.industry?.name ?? undefined,
+          subtitle: s.client?.name ?? s.keyBusinesses.map((k) => k.name).join(", ") ?? undefined,
           at: s.updatedAt,
           href: `/case-studies/${s.id}`,
         });
@@ -545,7 +568,7 @@ export default function Page() {
     return items.sort((a, b) => b.at.getTime() - a.at.getTime()).slice(0, 12);
   }, [filteredStudies, filteredShares]);
 
-  const maxIndustryCount = Math.max(1, ...industryBreakdown.map(([, c]) => c));
+  const maxIndustryCount = Math.max(1, ...keyBusinessBreakdown.map(([, c]) => c));
 
   /* ---- exports ---- */
   const exportCSV = () => {
@@ -567,7 +590,7 @@ export default function Page() {
         "case_study",
         s.title,
         s.client?.name ?? "",
-        s.industry?.name ?? "",
+        s.keyBusinesses.map((k) => k.name).join(", "),
         s.status,
         "",
         format(s.createdAt, "yyyy-MM-dd HH:mm:ss"),
@@ -625,7 +648,7 @@ export default function Page() {
     doc.setTextColor(100);
     doc.text(`Generated ${format(new Date(), "PPP")}`, 14, 25);
     doc.text(
-      `Range: ${dateRange} · Industry: ${industryId === "all" ? "All" : (tax.industries.find((i) => i.id === industryId)?.name ?? "")} · Client: ${clientId === "all" ? "All" : (tax.clients.find((c) => c.id === clientId)?.name ?? "")}`,
+      `Range: ${dateRange} · Industry: ${keyBusinessId === "all" ? "All" : (tax.industries.find((i) => i.id === keyBusinessId)?.name ?? "")} · Client: ${clientId === "all" ? "All" : (tax.clients.find((c) => c.id === clientId)?.name ?? "")}`,
       14,
       31,
     );
@@ -658,7 +681,7 @@ export default function Page() {
       body: filteredStudies.map((s) => [
         s.title,
         s.client?.name ?? "—",
-        s.industry?.name ?? "—",
+        s.keyBusinesses.map((k) => k.name).join(", ") || "—",
         s.status,
         format(s.updatedAt, "PP"),
       ]),
@@ -700,10 +723,10 @@ export default function Page() {
 
   /* ---- filter helpers ---- */
   const filtersActive =
-    dateRange !== "30d" || industryId !== "all" || clientId !== "all";
+    dateRange !== "30d" || keyBusinessId !== "all" || clientId !== "all";
   const resetFilters = () => {
     setDateRange("30d");
-    setIndustryId("all");
+    setKeyBusinessId("all");
     setClientId("all");
   };
 
@@ -802,19 +825,19 @@ export default function Page() {
               Industry
             </Label>
             <Select
-              value={industryId}
-              onValueChange={(v) => setIndustryId(v ?? "all")}
+              value={keyBusinessId}
+              onValueChange={(v) => setKeyBusinessId(v ?? "all")}
             >
               <SelectTrigger id="industry" className="w-45">
                 <SelectValue placeholder="Select industry">
-                  {industryId === "all"
+                  {keyBusinessId === "all"
                     ? "All industries"
-                    : tax.industries.find((i) => i.id === industryId)?.name}
+                    : tax.industries.find((i) => i.id === keyBusinessId)?.name}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All industries</SelectItem>
-                {tax.industries.map((i) => (
+                {tax?.industries?.map((i) => (
                   <SelectItem key={i.id} value={i.id}>
                     {i.name}
                   </SelectItem>
@@ -842,7 +865,7 @@ export default function Page() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All clients</SelectItem>
-                {tax.clients.map((c) => (
+                {tax?.clients?.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
                   </SelectItem>
@@ -869,8 +892,8 @@ export default function Page() {
         <StatCard
           icon={<BriefcaseIcon size={16} />}
           label="Clients"
-          value={tax.clients.length}
-          sub={`${tax.industries.length} industries`}
+          value={tax?.clients?.length ?? 0}
+          sub={`${tax?.industries?.length ?? 0} industries`}
         />
         <StatCard
           icon={<ShareIcon size={16} />}
@@ -983,7 +1006,7 @@ export default function Page() {
             <CardTitle className="text-base">Work by industry</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {industryBreakdown.map(([name, count]) => (
+            {keyBusinessBreakdown.map(([name, count]) => (
               <div key={name}>
                 <div className="mb-1 flex items-center justify-between text-xs">
                   <span className="truncate font-medium">{name}</span>
@@ -999,7 +1022,7 @@ export default function Page() {
                 </div>
               </div>
             ))}
-            {!industryBreakdown.length && (
+            {!keyBusinessBreakdown.length && (
               <div className="text-sm text-muted-foreground">
                 No data in range.
               </div>
@@ -1026,20 +1049,12 @@ export default function Page() {
                 key={c.name}
                 className="flex items-center gap-3 rounded-md p-2 hover:bg-muted"
               >
-                {c.logo ? (
-                  <img
-                    src={c.logo}
-                    alt=""
-                    className="h-8 w-8 rounded object-contain"
+                <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
+                  <BriefcaseIcon
+                    size={16}
+                    className="text-muted-foreground"
                   />
-                ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded bg-muted">
-                    <BriefcaseIcon
-                      size={16}
-                      className="text-muted-foreground"
-                    />
-                  </div>
-                )}
+                </div>
                 <div className="min-w-0 flex-1 truncate text-sm font-medium">
                   {c.name}
                 </div>

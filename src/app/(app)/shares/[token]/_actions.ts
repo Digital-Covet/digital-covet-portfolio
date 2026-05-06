@@ -4,7 +4,7 @@ import type { Prisma } from "@generated/prisma/client";
 import { cookies, headers } from "next/headers";
 import { z } from "zod";
 import { prisma } from "@/db";
-import { verifyPassword } from "@/lib/auth.server";
+import { verifyPassword } from "@/lib/password";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -31,11 +31,11 @@ export type ShareStatus = "ok" | "expired" | "revoked" | "limit";
 export type ShareInfo =
   | { exists: false }
   | {
-      exists: true;
-      name: string;
-      status: ShareStatus;
-      unlocked: boolean;
-    };
+    exists: true;
+    name: string;
+    status: ShareStatus;
+    unlocked: boolean;
+  };
 
 export type SerializedStudy = {
   id: string;
@@ -44,7 +44,7 @@ export type SerializedStudy = {
   heroImageUrl: string | null;
   projectDate: string | null;
   clientId: string | null;
-  industryId: string | null;
+  keyBusinesses: { name: string }[];
   slug: string;
   galleryUrls: string[];
   videoEmbedUrl: string | null;
@@ -58,7 +58,6 @@ export type SerializedStudy = {
   createdAt: string;
   updatedAt: string;
   client: { name: string; logoUrl: string | null } | null;
-  industry: { name: string } | null;
 };
 
 export type SerializedMetric = {
@@ -216,12 +215,26 @@ export async function getShareContent(token: string): Promise<ShareContent> {
   if (specific.length > 0) {
     where.id = { in: specific };
   } else {
+    const sec = share.filterSectorIds;
     const ind = share.filterIndustryIds;
+    const kb = share.filterKeyBusinessIds;
     const cli = share.filterClientIds;
     const cats = share.filterCategoryIds;
     const svcs = share.filterServiceIds;
 
-    if (ind.length > 0) where.industryId = { in: ind };
+    if (kb.length > 0) {
+      where.caseStudyKeyBusinesses = {
+        some: { keyBusinessId: { in: kb } },
+      };
+    } else if (ind.length > 0) {
+      where.caseStudyKeyBusinesses = {
+        some: { keyBusiness: { industryId: { in: ind } } },
+      };
+    } else if (sec.length > 0) {
+      where.caseStudyKeyBusinesses = {
+        some: { keyBusiness: { industry: { sectorId: { in: sec } } } },
+      };
+    }
     if (cli.length > 0) where.clientId = { in: cli };
     if (cats.length > 0) {
       where.caseStudyCategories = { some: { categoryId: { in: cats } } };
@@ -235,7 +248,9 @@ export async function getShareContent(token: string): Promise<ShareContent> {
     where,
     include: {
       client: { select: { name: true, logoUrl: true } },
-      industry: { select: { name: true } },
+      caseStudyKeyBusinesses: {
+        include: { keyBusiness: { include: { industry: true } } },
+      },
     },
     orderBy: { projectDate: "desc" },
   });
@@ -264,7 +279,6 @@ export async function getShareContent(token: string): Promise<ShareContent> {
     heroImageUrl: s.heroImageUrl,
     projectDate: s.projectDate?.toISOString() ?? null,
     clientId: s.clientId,
-    industryId: s.industryId,
     slug: s.slug,
     galleryUrls: s.galleryUrls,
     videoEmbedUrl: s.videoEmbedUrl,
@@ -280,7 +294,9 @@ export async function getShareContent(token: string): Promise<ShareContent> {
     client: s.client
       ? { name: s.client.name, logoUrl: s.client.logoUrl }
       : null,
-    industry: s.industry ? { name: s.industry.name } : null,
+    keyBusinesses: s.caseStudyKeyBusinesses.map(
+      (k) => k.keyBusiness,
+    ),
   }));
 
   const serializedMetrics: SerializedMetric[] = metrics.map((m) => ({

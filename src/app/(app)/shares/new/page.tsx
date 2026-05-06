@@ -6,22 +6,25 @@ export default async function NewSharePage() {
   let taxonomies: Awaited<ReturnType<typeof listTaxonomies>>;
   let caseStudiesData: Awaited<ReturnType<typeof listCaseStudies>>;
 
-  try {
+try {
     [taxonomies, caseStudiesData] = await Promise.all([
       listTaxonomies(),
       listCaseStudies(),
     ]);
   } catch (error) {
-    // Redirect unauthenticated users to login, matching the original behaviour
     if (error instanceof Error && error.message === "UNAUTHORIZED") {
       redirect("/login");
     }
     throw error;
   }
 
-  const publishedStudies = caseStudiesData.studies.filter(
+  if (!caseStudiesData.ok || !taxonomies.ok) {
+    redirect("/login");
+  }
+
+  const publishedStudies = caseStudiesData.data.studies.filter(
     (s) => s.status === "published",
   );
 
-  return <NewShareForm taxonomies={taxonomies} studies={publishedStudies} />;
+  return <NewShareForm taxonomies={taxonomies.data} studies={publishedStudies} />;
 }

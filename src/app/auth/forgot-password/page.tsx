@@ -14,6 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
+import { ROUTES } from "@/lib/constants";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -23,15 +24,19 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+
     const { error } = await authClient.requestPasswordReset({
       email,
-      redirectTo: "/auth/reset-password",
+
+      redirectTo: ROUTES.RESET_PASSWORD,
     });
+
     if (error) {
       toast.error(error.message);
     } else {
       setIsSent(true);
     }
+
     setLoading(false);
   };
 
@@ -52,9 +57,9 @@ export default function ForgotPasswordPage() {
                 receive an email shortly.
               </p>
               <Button
-                render={<Link href="/auth/login">Back to Login</Link>}
                 variant="outline"
                 className="w-full"
+                render={<Link href={ROUTES.LOGIN}>Back to Login</Link>}
               ></Button>
             </div>
           ) : (

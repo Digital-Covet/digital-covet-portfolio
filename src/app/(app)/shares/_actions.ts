@@ -3,8 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/db";
-import { generateToken, hashPassword, requireRole } from "@/lib/auth.server";
-import { buildCreatedByRbacFilter } from "@/lib/rbac";
+import { requireRole } from "@/lib/auth.server";
+import { generateToken, hashPassword } from "@/lib/password";
+import { buildCreatedByFilter } from "@/lib/rbac";
 
 const createShareSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
@@ -16,7 +17,9 @@ const createShareSchema = z.object({
   recipientEmail: z.email().max(255).nullable().optional(),
   expiresAt: z.string().nullable().optional(),
   maxViews: z.number().int().min(1).max(100_000).nullable().optional(),
+  filterSectorIds: z.array(z.uuid()).max(50).default([]),
   filterIndustryIds: z.array(z.uuid()).max(50).default([]),
+  filterKeyBusinessIds: z.array(z.uuid()).max(50).default([]),
   filterCategoryIds: z.array(z.uuid()).max(50).default([]),
   filterServiceIds: z.array(z.uuid()).max(50).default([]),
   filterClientIds: z.array(z.uuid()).max(50).default([]),
@@ -38,9 +41,11 @@ export type SerializedShare = {
   createdAt: string;
   createdBy: string | null;
   expiresAt: string | null;
+  filterSectorIds: string[];
+  filterIndustryIds: string[];
   filterCategoryIds: string[];
   filterClientIds: string[];
-  filterIndustryIds: string[];
+  filterKeyBusinessIds: string[];
   filterServiceIds: string[];
   maxViews: number | null;
   name: string;
@@ -78,7 +83,9 @@ export async function createShare(input: CreateShareInput) {
       recipientEmail: validated.recipientEmail ?? null,
       expiresAt: validated.expiresAt ? new Date(validated.expiresAt) : null,
       maxViews: validated.maxViews ?? null,
+      filterSectorIds: validated.filterSectorIds,
       filterIndustryIds: validated.filterIndustryIds,
+      filterKeyBusinessIds: validated.filterKeyBusinessIds,
       filterCategoryIds: validated.filterCategoryIds,
       filterServiceIds: validated.filterServiceIds,
       filterClientIds: validated.filterClientIds,
@@ -87,15 +94,15 @@ export async function createShare(input: CreateShareInput) {
     },
   });
 
-  return { share, url: `/share/${token}` };
-
   revalidatePath("/shares");
   revalidatePath("/dashboard");
+
+  return { share, url: `/share/${token}` };
 }
 
 export async function listShares() {
   const user = await requireRole("employee");
-  const rbacFilter = await buildCreatedByRbacFilter(user, "createdByUser");
+  const rbacFilter = await buildCreatedByFilter(user);
 
   const shares = await prisma.shareLink.findMany({
     where: { ...rbacFilter },
@@ -118,7 +125,7 @@ export async function listShares() {
 export async function revokeShare(id: string) {
   const user = await requireRole("employee");
   const { id: validatedId } = revokeShareSchema.parse({ id });
-  const rbacFilter = await buildCreatedByRbacFilter(user, "createdByUser");
+  const rbacFilter = await buildCreatedByFilter(user);
 
   const result = await prisma.shareLink.updateMany({
     where: { id: validatedId, ...rbacFilter },
@@ -141,7 +148,7 @@ export async function getShareViews(shareLinkId: string) {
   const { shareLinkId: validatedId } = getShareViewsSchema.parse({
     shareLinkId,
   });
-  const rbacFilter = await buildCreatedByRbacFilter(user, "createdByUser");
+  const rbacFilter = await buildCreatedByFilter(user);
 
   const share = await prisma.shareLink.findFirst({
     where: { id: validatedId, ...rbacFilter },

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { SetupPasswordForm } from "@/components/setup-password-form";
 import { prisma } from "@/db";
+import { ROUTES } from "@/lib/constants";
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -13,63 +14,73 @@ export default async function SetupPasswordPage(props: PageProps) {
 
   if (!token) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">Invalid Link</h1>
-          <p className="mt-2 text-muted-foreground">
-            The invitation link is missing a setup token.
-          </p>
-        </div>
-      </div>
+      <InvitationError
+        title="Invalid Link"
+        message="The invitation link is missing a setup token."
+      />
     );
   }
 
   const invitation = await prisma.invitation.findUnique({
     where: { token },
+    select: {
+      email: true,
+      expiresAt: true,
+      usedAt: true,
+
+      user: {
+        select: { passwordChanged: true },
+      },
+    },
   });
 
   if (!invitation) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">Invalid Link</h1>
-          <p className="mt-2 text-muted-foreground">
-            The invitation token is invalid.
-          </p>
-        </div>
-      </div>
+      <InvitationError
+        title="Invalid Link"
+        message="The invitation token is invalid."
+      />
     );
   }
 
   if (invitation.usedAt) {
-    redirect("/dashboard");
+    redirect(ROUTES.DASHBOARD);
   }
 
   if (invitation.expiresAt.getTime() < Date.now()) {
     return (
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600">Link Expired</h1>
-          <p className="mt-2 text-muted-foreground">
-            This invitation link has expired. Please contact your administrator.
-          </p>
-        </div>
-      </div>
+      <InvitationError
+        title="Link Expired"
+        message="This invitation link has expired. Please contact your administrator."
+      />
     );
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: invitation.email },
-  });
-
-  if (user?.passwordChanged) {
-    redirect("/dashboard");
+  if (invitation.user?.passwordChanged) {
+    redirect(ROUTES.DASHBOARD);
   }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
       <div className="w-full max-w-md">
         <SetupPasswordForm email={invitation.email} token={token} />
+      </div>
+    </div>
+  );
+}
+
+function InvitationError({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
+}) {
+  return (
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-red-600">{title}</h1>
+        <p className="mt-2 text-muted-foreground">{message}</p>
       </div>
     </div>
   );

@@ -1,46 +1,57 @@
 import { prisma } from "@/db";
 
-export type CreatedByIdFilter =
-  | Record<string, { id: string } | { id: { in: string[] } }>
-  | undefined;
-
-export type UserWhereFilter =
-  | { id: string }
-  | { id: { in: string[] } }
-  | { departmentId: string };
-
-interface AuthUser {
+export interface AuthUser {
   id: string;
   role: string | null;
   departmentId: string | null;
 }
 
-export async function buildCreatedByRbacFilter(
+export type CreatedByScalarFilter =
+  | { createdBy: string }
+  | { createdBy: { in: string[] } }
+  | undefined;
+
+export async function buildCreatedByFilter(
   authUser: AuthUser,
-  relationKey: string,
-): Promise<CreatedByIdFilter> {
-  if (authUser.role === "superadmin") return undefined;
+): Promise<CreatedByScalarFilter> {
+  if (authUser.role === "superadmin") {
+    return undefined;
+  }
 
   if (authUser.role === "admin") {
     if (!authUser.departmentId) {
-      return { [relationKey]: { id: "__no_match__" } };
+      return undefined;
     }
 
     const deptUsers = await prisma.user.findMany({
       where: { departmentId: authUser.departmentId },
       select: { id: true },
     });
-    const deptUserIds = deptUsers.map((u) => u.id);
 
-    return { [relationKey]: { id: { in: deptUserIds } } };
+    return { createdBy: { in: deptUsers.map((u) => u.id) } };
   }
 
-  return { [relationKey]: { id: authUser.id } };
+  return { createdBy: authUser.id };
 }
 
-export async function buildUserListRbacFilter(
+export function canMutateRecord(
   authUser: AuthUser,
-): Promise<UserWhereFilter | undefined> {
+  recordCreatedBy: string | null,
+): boolean {
+  if (authUser.role === "superadmin") return true;
+  if (!recordCreatedBy) return false;
+  return recordCreatedBy === authUser.id;
+}
+
+export type UserListFilter =
+  | { id: string }
+  | { id: { in: string[] } }
+  | { departmentId: string }
+  | undefined;
+
+export async function buildUserListFilter(
+  authUser: AuthUser,
+): Promise<UserListFilter> {
   if (authUser.role === "superadmin") return undefined;
 
   if (authUser.role === "admin") {

@@ -1,11 +1,31 @@
+import type { Prisma } from "@generated/prisma/client";
+
 export type Taxonomy = {
   id: string;
   name: string;
 };
 
+export type IndustryWithSector = Taxonomy & {
+  sectorId: string | null;
+};
+
+export type KeyBusinessWithIndustry = Taxonomy & {
+  industryId: string | null;
+};
+
 export type Client = {
   id: string;
   name: string;
+  logoUrl: string | null;
+};
+
+export type Taxonomies = {
+  industries: IndustryWithSector[];
+  categories: Taxonomy[];
+  services: Taxonomy[];
+  sectors: Taxonomy[];
+  keyBusinesses: KeyBusinessWithIndustry[];
+  clients: Client[];
 };
 
 export type Metric = {
@@ -19,17 +39,17 @@ export type Attachment = {
   url: string;
 };
 
-export type Testimonial = {
-  quote: string | null;
-  author: string | null;
-  title: string | null;
-};
+export type Basics = {
+  id?: string;
+  title: string;
+  slug: string;
+  clientId: string | null;
+  sectorId: string | null;
+  industryId: string | null;
+  keyBusinessIds: string[];
 
-export type Story = {
-  description: string | null;
-  challenge: string | null;
-  solution: string | null;
-  results: string | null;
+  projectDate: string | null;
+  status: "draft" | "published" | "archived";
 };
 
 export type Media = {
@@ -39,14 +59,17 @@ export type Media = {
   attachments: Attachment[];
 };
 
-export type Basics = {
-  id?: string;
-  title: string;
-  slug: string;
-  clientId: string | null;
-  industryId: string | null;
-  projectDate: string | null;
-  status: "draft" | "published" | "archived";
+export type Story = {
+  description: string | null;
+  challenge: string | null;
+  solution: string | null;
+  results: string | null;
+};
+
+export type Testimonial = {
+  quote: string | null;
+  author: string | null;
+  title: string | null;
 };
 
 export type CaseStudyForm = {
@@ -59,11 +82,32 @@ export type CaseStudyForm = {
   metrics: Metric[];
 };
 
-export type Taxonomies = {
-  industries: Taxonomy[];
-  categories: Taxonomy[];
-  services: Taxonomy[];
-  clients: Client[];
+export type DbCaseStudyWithRelations = Prisma.CaseStudyGetPayload<{
+  include: {
+    caseStudyCategories: { select: { categoryId: true } };
+    caseStudyServices: { select: { serviceId: true } };
+    caseStudyMetrics: { orderBy: { sortOrder: "asc" } };
+    caseStudyKeyBusinesses: {
+      include: {
+        keyBusiness: {
+          include: {
+            industry: true;
+          };
+        };
+      };
+    };
+    client: true;
+  };
+}>;
+
+export type CaseStudyResponse = {
+  study: Omit<
+    DbCaseStudyWithRelations,
+    "caseStudyCategories" | "caseStudyServices" | "caseStudyMetrics"
+  >;
+  categoryIds: string[];
+  serviceIds: string[];
+  metrics: Metric[];
 };
 
 export type CaseStudyListItem = {
@@ -72,36 +116,5 @@ export type CaseStudyListItem = {
   status: "draft" | "published" | "archived";
   heroImageUrl: string | null;
   client: { name: string } | null;
-  industry: { name: string } | null;
-};
-
-export type DbCaseStudy = {
-  id: string;
-  title: string;
-  slug: string;
-  clientId: string | null;
-  industryId: string | null;
-  projectDate: Date | null;
-  heroImageUrl: string | null;
-  galleryUrls: string[];
-  videoEmbedUrl: string | null;
-  attachmentUrls: unknown | null;
-  description: string | null;
-  challenge: string | null;
-  solution: string | null;
-  results: string | null;
-  testimonialQuote: string | null;
-  testimonialAuthor: string | null;
-  testimonialTitle: string | null;
-  status: "draft" | "published" | "archived";
-  createdAt: Date;
-  updatedAt: Date;
-  createdBy: string | null;
-};
-
-export type CaseStudyResponse = {
-  study: DbCaseStudy;
-  category_ids: string[];
-  service_ids: string[];
-  metrics: Metric[];
+  keyBusinesses: { name: string; industryId: string }[];
 };

@@ -6,7 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/db";
 import { auth } from "@/lib/auth";
 import { buildInviteUrl, ROLES } from "@/lib/constants";
-import { buildUserListRbacFilter } from "@/lib/rbac";
+import { buildUserListFilter } from "@/lib/rbac";
 import { err, ok, type Result } from "@/lib/result";
 import { sendEmail } from "@/services/email";
 import { renderInviteEmail } from "@/services/email-templates";
@@ -40,7 +40,7 @@ export async function listUsers(): Promise<{ users: UserListItem[] }> {
     throw new Error("Only admins can list users.");
   }
 
-  const rbacFilter = await buildUserListRbacFilter(currentUser);
+  const rbacFilter = await buildUserListFilter(currentUser);
 
   const users = await prisma.user.findMany({
     where: rbacFilter ?? {},

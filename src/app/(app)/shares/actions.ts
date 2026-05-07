@@ -1,5 +1,4 @@
 "use server";
-
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/db";
@@ -70,7 +69,6 @@ export type SerializedShareView = {
 export async function createShare(input: CreateShareInput) {
   const user = await requireRole("employee");
   const validated = createShareSchema.parse(input);
-
   const token = generateToken(24);
   const passwordHash = await hashPassword(validated.password);
 
@@ -97,13 +95,13 @@ export async function createShare(input: CreateShareInput) {
   revalidatePath("/shares");
   revalidatePath("/dashboard");
 
-  return { share, url: `/share/${token}` };
+  // FIX: Changed `/share/${token}` to `/shares/${token}` to match the Next.js route
+  return { share, url: `/shares/${token}` };
 }
 
 export async function listShares() {
   const user = await requireRole("employee");
   const rbacFilter = await buildCreatedByFilter(user);
-
   const shares = await prisma.shareLink.findMany({
     where: { ...rbacFilter },
     orderBy: { createdAt: "desc" },
@@ -112,13 +110,11 @@ export async function listShares() {
       _count: { select: { shareViews: true } },
     },
   });
-
   const serialized: SerializedShare[] = shares.map((s) => ({
     ...s,
     createdAt: s.createdAt.toISOString(),
     expiresAt: s.expiresAt?.toISOString() ?? null,
   }));
-
   return { shares: serialized };
 }
 
@@ -126,18 +122,15 @@ export async function revokeShare(id: string) {
   const user = await requireRole("employee");
   const { id: validatedId } = revokeShareSchema.parse({ id });
   const rbacFilter = await buildCreatedByFilter(user);
-
   const result = await prisma.shareLink.updateMany({
     where: { id: validatedId, ...rbacFilter },
     data: { revoked: true },
   });
-
   if (result.count === 0) {
     throw new Error(
       "Share not found or you do not have permission to revoke it",
     );
   }
-
   revalidatePath("/shares");
   revalidatePath("/dashboard");
   return { success: true };
@@ -149,30 +142,25 @@ export async function getShareViews(shareLinkId: string) {
     shareLinkId,
   });
   const rbacFilter = await buildCreatedByFilter(user);
-
   const share = await prisma.shareLink.findFirst({
     where: { id: validatedId, ...rbacFilter },
     select: { id: true, name: true },
   });
-
   if (!share) {
     throw new Error(
       "Share not found or you do not have permission to view its logs",
     );
   }
-
   const views = await prisma.shareView.findMany({
     where: { shareLinkId: validatedId },
     orderBy: { viewedAt: "desc" },
     take: 500,
   });
-
   const serializedViews: SerializedShareView[] = views.map((v) => ({
     id: v.id,
     ip: v.ip,
     userAgent: v.userAgent,
     viewedAt: v.viewedAt.toISOString(),
   }));
-
   return { views: serializedViews, shareName: share.name };
 }

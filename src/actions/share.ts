@@ -1,10 +1,7 @@
 "use server";
-
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
-
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { prisma } from "@/db";
 import {
   ActionException,
@@ -29,22 +26,16 @@ export async function verifySharePassword(
 ): Promise<boolean> {
   const colonIndex = stored.indexOf(":");
   if (colonIndex === -1) return false;
-
   const salt = stored.slice(0, colonIndex);
   const expectedKey = stored.slice(colonIndex + 1);
-
   if (!salt || !expectedKey) return false;
-
   try {
     const candidateKey = scryptSync(password, salt, SCRYPT_KEY_LENGTH).toString(
       "hex",
     );
-
     const a = Buffer.from(expectedKey, "hex");
     const b = Buffer.from(candidateKey, "hex");
-
     if (a.length !== b.length) return false;
-
     return timingSafeEqual(a, b);
   } catch {
     return false;
@@ -127,9 +118,7 @@ export async function listShares(
   return runAction(async () => {
     const authUser = await requireRole("employee");
     const opts = listSharesInputSchema.parse(input);
-
     const rbacFilter = await buildCreatedByFilter(authUser);
-
     const rows = await prisma.shareLink.findMany({
       where: {
         ...(rbacFilter ?? {}),
@@ -137,17 +126,14 @@ export async function listShares(
           ? { name: { contains: opts.search, mode: "insensitive" as const } }
           : {}),
       },
-
       select: shareLinkSelect,
       orderBy: { createdAt: "desc" },
       take: PAGE_SIZE + 1,
       ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
     });
-
     const hasNextPage = rows.length > PAGE_SIZE;
     const page = hasNextPage ? rows.slice(0, PAGE_SIZE) : rows;
     const nextCursor = hasNextPage ? (page[page.length - 1]?.id ?? null) : null;
-
     return ok({ shares: page as ShareLinkItem[], nextCursor });
   });
 }
@@ -163,26 +149,19 @@ export async function listAllShareViews(): Promise<
 > {
   return runAction(async () => {
     const authUser = await requireRole("employee");
-
     const rbacFilter = await buildCreatedByFilter(authUser);
-
     const accessibleLinks = await prisma.shareLink.findMany({
       where: rbacFilter ?? {},
       select: { id: true },
     });
-
     const accessibleLinkIds = accessibleLinks.map((l) => l.id);
-
     if (rbacFilter !== undefined && accessibleLinkIds.length === 0) {
       return ok({ views: [] });
     }
-
     const since = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
-
     const views = await prisma.shareView.findMany({
       where: {
         viewedAt: { gte: since },
-
         ...(rbacFilter !== undefined
           ? { shareLinkId: { in: accessibleLinkIds } }
           : {}),
@@ -195,7 +174,6 @@ export async function listAllShareViews(): Promise<
       orderBy: { viewedAt: "asc" },
       take: 10_000,
     });
-
     return ok({ views });
   });
 }
@@ -224,10 +202,8 @@ export async function createShare(
   return runAction(async () => {
     const user = await requireRole("employee");
     const data = createShareSchema.parse(input);
-
     const token = crypto.randomUUID();
     const passwordHash = hashPassword(data.password);
-
     const shareLink = await prisma.shareLink.create({
       data: {
         name: data.name,
@@ -246,13 +222,12 @@ export async function createShare(
         specificCaseStudyIds: data.specificCaseStudyIds,
         createdBy: user.id,
       },
-
       select: { id: true, token: true },
     });
-
     revalidatePath("/shares");
 
-    return ok({ id: shareLink.id, url: `/s/${shareLink.token}` });
+    // FIX: Changed `/s/${shareLink.token}` to `/shares/${shareLink.token}` to match the Next.js route
+    return ok({ id: shareLink.id, url: `/shares/${shareLink.token}` });
   });
 }
 
@@ -262,19 +237,15 @@ export async function revokeShare(input: {
   return runAction(async () => {
     const authUser = await requireRole("employee");
     const { id } = z.object({ id: z.uuid() }).parse(input);
-
     const rbacFilter = await buildCreatedByFilter(authUser);
     const whereClause = rbacFilter ? { id, ...rbacFilter } : { id };
-
     const updated = await prisma.shareLink.updateMany({
       where: whereClause,
       data: { revoked: true },
     });
-
     if (!updated.count) {
       throw new ActionException("NOT_FOUND", "Not found");
     }
-
     revalidatePath("/shares");
     return ok({ success: true });
   });
@@ -286,18 +257,14 @@ export async function deleteShare(input: {
   return runAction(async () => {
     const authUser = await requireRole("employee");
     const { id } = z.object({ id: z.uuid() }).parse(input);
-
     const rbacFilter = await buildCreatedByFilter(authUser);
     const whereClause = rbacFilter ? { id, ...rbacFilter } : { id };
-
     const deleted = await prisma.shareLink.deleteMany({
       where: whereClause,
     });
-
     if (!deleted.count) {
       throw new ActionException("NOT_FOUND", "Not found");
     }
-
     revalidatePath("/shares");
     return ok({ success: true });
   });

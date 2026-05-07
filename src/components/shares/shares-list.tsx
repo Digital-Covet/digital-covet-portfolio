@@ -15,8 +15,8 @@ import { toast } from "sonner";
 import type {
   SerializedShare,
   SerializedShareView,
-} from "@/app/(app)/shares/_actions";
-import { getShareViews, revokeShare } from "@/app/(app)/shares/_actions";
+} from "@/app/(app)/shares/actions";
+import { getShareViews, revokeShare } from "@/app/(app)/shares/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -208,8 +208,8 @@ function ShareCard({
 
   const shareUrl =
     typeof window !== "undefined"
-      ? `${window.location.origin}/share/${share.token}`
-      : `/share/${share.token}`;
+      ? `${window.location.origin}/shares/${share.token}`
+      : `/shares/${share.token}`;
 
   return (
     <Card>

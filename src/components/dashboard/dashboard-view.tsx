@@ -14,7 +14,6 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { useMemo } from "react";
-
 import { ExportButton } from "@/components/dashboard/ExportButton";
 import { ViewsChart } from "@/components/dashboard/ViewsChart";
 import { Badge } from "@/components/ui/badge";
@@ -35,14 +34,11 @@ import { useThemeColors } from "@/hooks/useThemeColors";
 import type { ActivityItem } from "@/utils/buildActivityFeed";
 import { getShareStatus } from "@/utils/shareStatus";
 
-export default function Page() {
-  // Data fetching — loading and error state now explicit, not silent.
+export function DashboardView() {
   const { data, loading, error } = useDashboardData();
 
-  // Filter state — industryId replaces the misnamed keyBusinessId.
   const filters = useDashboardFilters();
 
-  // All useMemo chains extracted; derived data computed from server aggregates.
   const derived = useDashboardDerivedData({
     studies: data?.studies ?? [],
     shares: data?.shares ?? [],
@@ -57,8 +53,6 @@ export default function Page() {
     granularity: filters.granularity,
   });
 
-  // Theme colors — matchMedia-based, no MutationObserver polling.
-  // Pass watchClass=true if your app uses a class-based dark mode toggle.
   const themeColors = useThemeColors(false);
 
   const maxIndustryCount = useMemo(
@@ -75,7 +69,6 @@ export default function Page() {
     clients: [],
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="mx-auto max-w-7xl p-6 md:p-10">
@@ -84,7 +77,6 @@ export default function Page() {
     );
   }
 
-  // Explicit error state — previously silent empty arrays on fetch failure.
   if (error) {
     return (
       <div className="mx-auto max-w-7xl p-6 md:p-10">
@@ -99,7 +91,7 @@ export default function Page() {
 
   return (
     <div className="mx-auto max-w-7xl p-6 md:p-10">
-      {/* Header */}
+      {}
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -109,8 +101,7 @@ export default function Page() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {/* ExportButton owns all CSV/PDF logic and consumes viewCountByShareId
-              from the shared hook — no local Map rebuilding. */}
+          {}
           <ExportButton
             filteredStudies={derived.filteredStudies}
             filteredShares={derived.filteredShares}
@@ -143,7 +134,7 @@ export default function Page() {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <Card className="mt-6">
         <CardContent className="flex flex-wrap items-end gap-3 p-4">
           <div className="flex flex-col gap-1">
@@ -179,8 +170,7 @@ export default function Page() {
             >
               Industry
             </Label>
-            {/* State variable renamed industryId to match its semantic meaning.
-                Previously called keyBusinessId but compared against Industry IDs. */}
+            {}
             <Select
               value={filters.industryId}
               onValueChange={(v) => filters.setIndustryId(v ?? "all")}
@@ -243,7 +233,7 @@ export default function Page() {
         </CardContent>
       </Card>
 
-      {/* Stats */}
+      {}
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<FileTextIcon size={16} />}
@@ -271,7 +261,7 @@ export default function Page() {
         />
       </div>
 
-      {/* Chart — extracted to ViewsChart which owns the chart.js lifecycle. */}
+      {}
       <Card className="mt-6">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -302,7 +292,7 @@ export default function Page() {
       </Card>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        {/* Activity feed */}
+        {}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -321,7 +311,7 @@ export default function Page() {
           </CardContent>
         </Card>
 
-        {/* Work by industry */}
+        {}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Work by industry</CardTitle>
@@ -353,7 +343,7 @@ export default function Page() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        {/* Top clients */}
+        {}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Top clients</CardTitle>
@@ -389,7 +379,7 @@ export default function Page() {
           </CardContent>
         </Card>
 
-        {/* Most viewed shares */}
+        {}
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Most viewed shares</CardTitle>
@@ -402,8 +392,6 @@ export default function Page() {
           </CardHeader>
           <CardContent className="space-y-1">
             {derived.topShares.map((s) => {
-              // getShareStatus replaces the three inline ternary chains that
-              // were duplicated in this render, exportCSV, and exportPDF.
               const status = getShareStatus(s);
               return (
                 <div
@@ -448,10 +436,6 @@ export default function Page() {
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Local sub-components — small enough to stay in this file.
-// ---------------------------------------------------------------------------
 
 function StatCard({
   icon,

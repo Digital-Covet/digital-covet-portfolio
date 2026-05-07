@@ -6,6 +6,7 @@ export type ActionErrorCode =
   | "UNAUTHORIZED"
   | "NOT_FOUND"
   | "VALIDATION"
+  | "FORBIDDEN"
   | "SERVER_ERROR";
 
 export type ActionError = {

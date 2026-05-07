@@ -1,5 +1,7 @@
 import { listTaxonomies } from "@/actions/content";
-import { TaxonomyList } from "@/components/taxonomies/taxonomy-list";
+import { TaxonomiesClient } from "@/components/taxonomies/taxonomies-client";
+
+export const dynamic = "force-dynamic";
 
 export default async function TaxonomiesPage() {
   const result = await listTaxonomies();
@@ -21,32 +23,8 @@ export default async function TaxonomiesPage() {
         Master lists for tagging case studies.
       </p>
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <TaxonomyList
-          title="Sectors"
-          type="sectors"
-          items={data.sectors}
-        />
-        <TaxonomyList
-          title="Industries"
-          type="industries"
-          items={data.industries}
-          parents={data.sectors}
-          parentType="sectors"
-        />
-        <TaxonomyList
-          title="Key Businesses"
-          type="key_businesses"
-          items={data.keyBusinesses}
-          parents={data.industries}
-          parentType="industries"
-        />
-        <TaxonomyList
-          title="Work Categories"
-          type="work_categories"
-          items={data.categories}
-        />
-        <TaxonomyList title="Services" type="services" items={data.services} />
+      <div className="mt-8">
+        <TaxonomiesClient data={data} />
       </div>
     </div>
   );

@@ -41,6 +41,7 @@ interface TaxonomyListProps {
   items: TaxonomyItem[];
   parents?: TaxonomyItem[];
   parentType?: "sectors" | "industries";
+  onSelect?: (id: string) => void;
 }
 
 export function TaxonomyList({
@@ -49,10 +50,12 @@ export function TaxonomyList({
   items,
   parents = [],
   parentType,
+  onSelect,
 }: TaxonomyListProps) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [parentId, setParentId] = useState<string | undefined>("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const showParentSelect =
@@ -76,17 +79,24 @@ export function TaxonomyList({
     }
   }
 
-  async function handleDelete() {
-    if (!deleteId) return;
+  async function handleDeleteClick(id: string) {
     try {
-      await deleteTaxonomy({ type, id: deleteId });
-      toast.success("Deleted");
-      router.refresh();
+      const result = await deleteTaxonomy({ type, id });
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
+      setDeleteId(id);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to delete");
-    } finally {
-      setDeleteId(null);
+      toast.error(e instanceof Error ? e.message : "Failed to check delete");
     }
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deleteId) return;
+    toast.success("Deleted");
+    router.refresh();
+    setDeleteId(null);
   }
 
   return (
@@ -134,10 +144,22 @@ export function TaxonomyList({
           {items.map((i) => (
             <div
               key={i.id}
-              className="flex items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-muted"
+              className={`flex items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-muted ${
+                selectedId === i.id ? "bg-muted font-medium" : ""
+              }`}
             >
-              <span>{i.name}</span>
-              <button onClick={() => setDeleteId(i.id)}>
+              <button
+                className="flex-1 text-left"
+                onClick={() => {
+                  if (onSelect) {
+                    setSelectedId(selectedId === i.id ? null : i.id);
+                    onSelect(selectedId === i.id ? "" : i.id);
+                  }
+                }}
+              >
+                {i.name}
+              </button>
+              <button onClick={() => handleDeleteClick(i.id)}>
                 <TrashIcon size={16} />
               </button>
             </div>
@@ -162,7 +184,7 @@ export function TaxonomyList({
             <AlertDialogCancel onClick={() => setDeleteId(null)}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteConfirm}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

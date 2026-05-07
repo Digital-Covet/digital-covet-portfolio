@@ -34,7 +34,7 @@ async function runAction<T>(
       return err("VALIDATION", e.issues[0]?.message ?? "Validation failed");
     }
     console.error("[action error]", e);
-    return err("SERVER_ERROR", "An unexpected error occurred");
+    return err("SERVER_ERROR", e instanceof Error ? e.message : "An unexpected error occurred");
   }
 }
 
@@ -88,13 +88,25 @@ export async function deleteTaxonomy(input: {
   type: TaxonomyType;
   id: string;
 }): Promise<ActionResult<{ success: boolean }>> {
-  return runAction(async () => {
+  try {
     await requireRole("admin");
     await deleteTaxonomyItem(input.type, input.id);
     revalidatePath("/taxonomies");
     revalidatePath("/shares/new");
     return ok({ success: true });
-  });
+  } catch (e) {
+    if (e instanceof ActionException) {
+      return err(e.code, e.message);
+    }
+    if (e instanceof z.ZodError) {
+      return err("VALIDATION", e.issues[0]?.message ?? "Validation failed");
+    }
+    if (e instanceof Error && e.message.startsWith("Cannot delete")) {
+      return err("FORBIDDEN", e.message);
+    }
+    console.error("[action error]", e);
+    return err("SERVER_ERROR", e instanceof Error ? e.message : "An unexpected error occurred");
+  }
 }
 
 const clientInputSchema = z.object({

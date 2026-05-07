@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { listCaseStudies, listTaxonomies } from "@/actions/content";
 import { NewShareForm } from "@/components/shares/new-share-form";
 
+export const dynamic = "force-dynamic";
+
 export default async function NewSharePage() {
   let taxonomies: Awaited<ReturnType<typeof listTaxonomies>>;
   let caseStudiesData: Awaited<ReturnType<typeof listCaseStudies>>;

@@ -7,7 +7,7 @@
     "filePath": "repomix-output.md",
     "style": "markdown",
     "parsableStyle": false,
-    "fileSummary": true,
+    "fileSummary": false,
     "directoryStructure": true,
     "files": true,
     "removeComments": true,

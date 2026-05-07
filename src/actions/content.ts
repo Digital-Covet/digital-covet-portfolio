@@ -2,111 +2,122 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-
 import { prisma } from "@/db";
-import { requireRole } from "@/lib/auth.server";
 import {
   ActionException,
   type ActionResult,
+  runAction as baseRunAction,
   err,
   ok,
 } from "@/lib/action-result";
+import { requireRole } from "@/lib/auth.server";
 import { buildCreatedByFilter } from "@/lib/rbac";
+import { type CaseStudyInput, caseStudyInputSchema } from "@/schemas/content";
 import type {
   CaseStudyListItem,
   CaseStudyResponse,
   Taxonomies,
 } from "@/types/case-studies";
-import type { TaxonomyType } from "@/utils/taxonomy-crud";
-import { createTaxonomyItem, deleteTaxonomyItem } from "@/utils/taxonomy-crud";
-import { caseStudyInputSchema, type CaseStudyInput } from "@/schemas/content";
+import {
+  createTaxonomyItem,
+  deleteTaxonomyItem,
+  getTaxonomyDeletionBlocker,
+  TaxonomyInUseError,
+  taxonomyTypeSchema,
+} from "@/utils/taxonomy-crud";
 
 async function runAction<T>(
   fn: () => Promise<ActionResult<T>>,
 ): Promise<ActionResult<T>> {
   try {
-    return await fn();
+    return await baseRunAction(fn);
   } catch (e) {
-    if (e instanceof ActionException) {
-      return err(e.code, e.message);
+    if (e instanceof TaxonomyInUseError) {
+      return err("CONFLICT", e.message);
     }
-    if (e instanceof z.ZodError) {
-      return err("VALIDATION", e.issues[0]?.message ?? "Validation failed");
-    }
-    console.error("[action error]", e);
-    return err("SERVER_ERROR", e instanceof Error ? e.message : "An unexpected error occurred");
+    throw e;
   }
 }
+
+const createTaxonomyInputSchema = z.object({
+  type: taxonomyTypeSchema,
+  name: z.string().trim().min(1, "Name is required").max(200),
+  parentId: z.uuid("Invalid parent ID").optional(),
+});
+
+const deleteTaxonomyInputSchema = z.object({
+  type: taxonomyTypeSchema,
+  id: z.uuid("Invalid taxonomy ID"),
+});
+
+const checkTaxonomyInputSchema = deleteTaxonomyInputSchema;
 
 export async function listTaxonomies(): Promise<ActionResult<Taxonomies>> {
   return runAction(async () => {
     await requireRole("employee");
 
-    const [industries, categories, services, sectors, keyBusinesses, clients] = await Promise.all([
-      prisma.industry.findMany({ 
-        orderBy: { name: "asc" },
-        select: { id: true, name: true, sectorId: true }
-      }),
-      prisma.workCategory.findMany({ orderBy: { name: "asc" } }),
-      prisma.service.findMany({ orderBy: { name: "asc" } }),
-      prisma.sector.findMany({ orderBy: { name: "asc" } }),
-      prisma.keyBusiness.findMany({ 
-        orderBy: { name: "asc" },
-        select: { id: true, name: true, industryId: true }
-      }),
-      prisma.client.findMany({ orderBy: { name: "asc" } }),
-    ]);
+    const [industries, categories, services, sectors, keyBusinesses, clients] =
+      await Promise.all([
+        prisma.industry.findMany({
+          orderBy: { name: "asc" },
+          select: { id: true, name: true, sectorId: true },
+        }),
+        prisma.workCategory.findMany({ orderBy: { name: "asc" } }),
+        prisma.service.findMany({ orderBy: { name: "asc" } }),
+        prisma.sector.findMany({ orderBy: { name: "asc" } }),
+        prisma.keyBusiness.findMany({
+          orderBy: { name: "asc" },
+          select: { id: true, name: true, industryId: true },
+        }),
+        prisma.client.findMany({ orderBy: { name: "asc" } }),
+      ]);
 
-    return ok({ industries, categories, services, sectors, keyBusinesses, clients });
+    return ok({
+      industries,
+      categories,
+      services,
+      sectors,
+      keyBusinesses,
+      clients,
+    });
   });
 }
 
-export async function createTaxonomy(input: {
-  type: TaxonomyType;
-  name: string;
-  parentId?: string;
-}): Promise<ActionResult<{ id: string; name: string }>> {
+export async function createTaxonomy(
+  input: z.infer<typeof createTaxonomyInputSchema>,
+): Promise<ActionResult<{ id: string; name: string }>> {
   return runAction(async () => {
     await requireRole("admin");
-
-    if (!input.name.trim()) {
-      throw new ActionException("VALIDATION", "Name is required");
-    }
-
-    const result = await createTaxonomyItem(
-      input.type,
-      input.name.trim(),
-      input.parentId,
-    );
+    const { type, name, parentId } = createTaxonomyInputSchema.parse(input);
+    const result = await createTaxonomyItem(type, name, parentId);
     revalidatePath("/taxonomies");
     revalidatePath("/shares/new");
     return ok(result);
   });
 }
 
-export async function deleteTaxonomy(input: {
-  type: TaxonomyType;
-  id: string;
-}): Promise<ActionResult<{ success: boolean }>> {
-  try {
+export async function checkTaxonomyDeletable(
+  input: z.infer<typeof checkTaxonomyInputSchema>,
+): Promise<ActionResult<{ deletable: boolean; reason: string | null }>> {
+  return runAction(async () => {
     await requireRole("admin");
-    await deleteTaxonomyItem(input.type, input.id);
+    const { type, id } = checkTaxonomyInputSchema.parse(input);
+    const reason = await getTaxonomyDeletionBlocker(type, id);
+    return ok({ deletable: reason === null, reason });
+  });
+}
+
+export async function deleteTaxonomy(
+  input: z.infer<typeof deleteTaxonomyInputSchema>,
+): Promise<ActionResult<{ success: boolean }>> {
+  return runAction(async () => {
+    await requireRole("admin");
+    const { type, id } = deleteTaxonomyInputSchema.parse(input);
+    await deleteTaxonomyItem(type, id);
     revalidatePath("/taxonomies");
     revalidatePath("/shares/new");
     return ok({ success: true });
-  } catch (e) {
-    if (e instanceof ActionException) {
-      return err(e.code, e.message);
-    }
-    if (e instanceof z.ZodError) {
-      return err("VALIDATION", e.issues[0]?.message ?? "Validation failed");
-    }
-    if (e instanceof Error && e.message.startsWith("Cannot delete")) {
-      return err("FORBIDDEN", e.message);
-    }
-    console.error("[action error]", e);
-    return err("SERVER_ERROR", e instanceof Error ? e.message : "An unexpected error occurred");
-  }
+  });
 }
 
 const clientInputSchema = z.object({
@@ -119,17 +130,37 @@ export async function upsertClient(
   input: z.infer<typeof clientInputSchema>,
 ): Promise<ActionResult<{ id: string; name: string }>> {
   return runAction(async () => {
-    await requireRole("employee");
+    const user = await requireRole("employee");
     const data = clientInputSchema.parse(input);
-
     const values = {
       name: data.name,
       logoUrl: data.logoUrl ?? null,
     };
 
-    const result = data.id
-      ? await prisma.client.update({ where: { id: data.id }, data: values })
-      : await prisma.client.create({ data: values });
+    let result: { id: string; name: string };
+
+    if (data.id) {
+      const isAdmin = user.role === "admin" || user.role === "superadmin";
+      const whereClause = isAdmin
+        ? { id: data.id }
+        : { id: data.id, createdBy: user.id };
+
+      const updated = await prisma.client.updateMany({
+        where: whereClause,
+        data: values,
+      });
+
+      if (!updated.count) {
+        throw new ActionException("NOT_FOUND", "Not found");
+      }
+
+      result = { id: data.id, name: data.name };
+    } else {
+      result = await prisma.client.create({
+        data: { ...values, createdBy: user.id },
+        select: { id: true, name: true },
+      });
+    }
 
     revalidatePath("/clients");
     revalidatePath("/shares/new");
@@ -158,7 +189,6 @@ export async function uploadFile(input: {
 }): Promise<ActionResult<{ url: string }>> {
   return runAction(async () => {
     await requireRole("employee");
-
     return ok({
       url: `https://storage.example.com/${input.bucket}/${input.filename}`,
     });
@@ -171,7 +201,6 @@ export async function upsertCaseStudy(
   return runAction(async () => {
     const user = await requireRole("employee");
     const data = caseStudyInputSchema.parse(input);
-
     const rbacFilter = await buildCreatedByFilter(user);
 
     const dbPayload = {
@@ -182,7 +211,6 @@ export async function upsertCaseStudy(
       heroImageUrl: data.heroImageUrl ?? null,
       galleryUrls: data.galleryUrls,
       videoEmbedUrl: data.videoEmbedUrl ?? null,
-
       attachmentUrls: data.attachments,
       description: data.description ?? null,
       challenge: data.challenge ?? null,
@@ -203,12 +231,10 @@ export async function upsertCaseStudy(
 
       if (id) {
         const whereClause = rbacFilter ? { id, ...rbacFilter } : { id };
-
         const updated = await tx.caseStudy.updateMany({
           where: whereClause,
           data: dbPayload,
         });
-
         if (!updated.count) {
           throw new ActionException("NOT_FOUND", "Not found");
         }
@@ -234,7 +260,6 @@ export async function upsertCaseStudy(
           skipDuplicates: true,
         });
       }
-
       if (data.serviceIds.length) {
         await tx.caseStudyService.createMany({
           data: data.serviceIds.map((serviceId) => ({
@@ -244,7 +269,6 @@ export async function upsertCaseStudy(
           skipDuplicates: true,
         });
       }
-
       if (data.keyBusinessIds.length) {
         await tx.caseStudyKeyBusiness.createMany({
           data: data.keyBusinessIds.map((keyBusinessId) => ({
@@ -254,7 +278,6 @@ export async function upsertCaseStudy(
           skipDuplicates: true,
         });
       }
-
       if (data.metrics.length) {
         await tx.caseStudyMetric.createMany({
           data: data.metrics.map((m, sortOrder) => ({
@@ -273,7 +296,6 @@ export async function upsertCaseStudy(
     revalidatePath("/case-studies");
     revalidatePath("/dashboard");
     revalidatePath("/shares/new");
-
     return ok(result);
   });
 }
@@ -283,7 +305,6 @@ const listInputSchema = z.object({
   search: z.string().max(200).optional(),
   cursor: z.uuid().optional(),
 });
-
 export type ListCaseStudiesInput = z.infer<typeof listInputSchema>;
 
 const PAGE_SIZE = 50;
@@ -298,12 +319,14 @@ export type CaseStudyListItemWithDates = CaseStudyListItem & {
 export async function listCaseStudies(
   input: ListCaseStudiesInput = {},
 ): Promise<
-  ActionResult<{ studies: CaseStudyListItemWithDates[]; nextCursor: string | null }>
+  ActionResult<{
+    studies: CaseStudyListItemWithDates[];
+    nextCursor: string | null;
+  }>
 > {
   return runAction(async () => {
     const user = await requireRole("employee");
     const opts = listInputSchema.parse(input);
-
     const rbacFilter = await buildCreatedByFilter(user);
 
     const rows = await prisma.caseStudy.findMany({
@@ -315,7 +338,6 @@ export async function listCaseStudies(
           : {}),
       },
       orderBy: { createdAt: "desc" },
-
       select: {
         id: true,
         title: true,
@@ -326,10 +348,11 @@ export async function listCaseStudies(
         clientId: true,
         client: { select: { name: true } },
         caseStudyKeyBusinesses: {
-          select: { keyBusiness: { select: { name: true, industryId: true } } },
+          select: {
+            keyBusiness: { select: { name: true, industryId: true } },
+          },
         },
       },
-
       take: PAGE_SIZE + 1,
       ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
     });
@@ -348,9 +371,10 @@ export async function listCaseStudies(
         updatedAt: s.updatedAt,
         clientId: s.clientId,
         client: s.client,
-        keyBusinesses: s.caseStudyKeyBusinesses.map(
-          (k) => k.keyBusiness,
-        ) as { name: string; industryId: string }[],
+        keyBusinesses: s.caseStudyKeyBusinesses.map((k) => k.keyBusiness) as {
+          name: string;
+          industryId: string;
+        }[],
       })) as CaseStudyListItemWithDates[],
       nextCursor,
     });
@@ -363,7 +387,6 @@ export async function getCaseStudy(input: {
   return runAction(async () => {
     const user = await requireRole("employee");
     const { id } = z.object({ id: z.uuid() }).parse(input);
-
     const rbacFilter = await buildCreatedByFilter(user);
     const whereClause = rbacFilter ? { id, ...rbacFilter } : { id };
 
@@ -376,9 +399,7 @@ export async function getCaseStudy(input: {
         caseStudyKeyBusinesses: {
           include: {
             keyBusiness: {
-              include: {
-                industry: true,
-              },
+              include: { industry: true },
             },
           },
         },
@@ -401,7 +422,6 @@ export async function getCaseStudy(input: {
       study: studyData,
       categoryIds: caseStudyCategories.map((c) => c.categoryId),
       serviceIds: caseStudyServices.map((s) => s.serviceId),
-
       metrics: caseStudyMetrics.map(({ label, value, unit }) => ({
         label,
         value,
@@ -417,7 +437,6 @@ export async function deleteCaseStudy(input: {
   return runAction(async () => {
     const user = await requireRole("employee");
     const { id } = z.object({ id: z.uuid() }).parse(input);
-
     const rbacFilter = await buildCreatedByFilter(user);
     const whereClause = rbacFilter ? { id, ...rbacFilter } : { id };
 
@@ -432,7 +451,6 @@ export async function deleteCaseStudy(input: {
     revalidatePath("/case-studies");
     revalidatePath("/dashboard");
     revalidatePath("/shares/new");
-
     return ok({ success: true });
   });
 }

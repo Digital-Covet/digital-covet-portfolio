@@ -1,46 +1,17 @@
 "use server";
-import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
+
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/db";
 import {
   ActionException,
   type ActionResult,
-  err,
   ok,
+  runAction,
 } from "@/lib/action-result";
 import { requireRole } from "@/lib/auth.server";
+import { hashPassword } from "@/lib/crypto.server";
 import { buildCreatedByFilter } from "@/lib/rbac";
-
-const SCRYPT_KEY_LENGTH = 64;
-
-function hashPassword(password: string): string {
-  const salt = randomBytes(16).toString("hex");
-  const key = scryptSync(password, salt, SCRYPT_KEY_LENGTH).toString("hex");
-  return `${salt}:${key}`;
-}
-
-export async function verifySharePassword(
-  password: string,
-  stored: string,
-): Promise<boolean> {
-  const colonIndex = stored.indexOf(":");
-  if (colonIndex === -1) return false;
-  const salt = stored.slice(0, colonIndex);
-  const expectedKey = stored.slice(colonIndex + 1);
-  if (!salt || !expectedKey) return false;
-  try {
-    const candidateKey = scryptSync(password, salt, SCRYPT_KEY_LENGTH).toString(
-      "hex",
-    );
-    const a = Buffer.from(expectedKey, "hex");
-    const b = Buffer.from(candidateKey, "hex");
-    if (a.length !== b.length) return false;
-    return timingSafeEqual(a, b);
-  } catch {
-    return false;
-  }
-}
 
 const shareLinkSelect = {
   id: true,
@@ -84,28 +55,10 @@ export type ShareLinkItem = {
   specificCaseStudyIds: string[];
 };
 
-async function runAction<T>(
-  fn: () => Promise<ActionResult<T>>,
-): Promise<ActionResult<T>> {
-  try {
-    return await fn();
-  } catch (e) {
-    if (e instanceof ActionException) {
-      return err(e.code, e.message);
-    }
-    if (e instanceof z.ZodError) {
-      return err("VALIDATION", e.issues[0]?.message ?? "Validation failed");
-    }
-    console.error("[share action error]", e);
-    return err("SERVER_ERROR", "An unexpected error occurred");
-  }
-}
-
 const listSharesInputSchema = z.object({
   search: z.string().max(200).optional(),
   cursor: z.uuid().optional(),
 });
-
 export type ListSharesInput = z.infer<typeof listSharesInputSchema>;
 
 const PAGE_SIZE = 50;
@@ -119,6 +72,7 @@ export async function listShares(
     const authUser = await requireRole("employee");
     const opts = listSharesInputSchema.parse(input);
     const rbacFilter = await buildCreatedByFilter(authUser);
+
     const rows = await prisma.shareLink.findMany({
       where: {
         ...(rbacFilter ?? {}),
@@ -131,6 +85,7 @@ export async function listShares(
       take: PAGE_SIZE + 1,
       ...(opts.cursor ? { cursor: { id: opts.cursor }, skip: 1 } : {}),
     });
+
     const hasNextPage = rows.length > PAGE_SIZE;
     const page = hasNextPage ? rows.slice(0, PAGE_SIZE) : rows;
     const nextCursor = hasNextPage ? (page[page.length - 1]?.id ?? null) : null;
@@ -138,43 +93,85 @@ export async function listShares(
   });
 }
 
-export type ShareViewItem = {
-  id: string;
-  shareLinkId: string;
-  viewedAt: Date;
-};
+export interface DailyViewBucket {
+  date: string;
+  views: number;
+}
 
-export async function listAllShareViews(): Promise<
-  ActionResult<{ views: ShareViewItem[] }>
+export interface DashboardViewStats {
+  viewCountByShareId: Record<string, number>;
+  totalViews: number;
+
+  dailyBuckets: DailyViewBucket[];
+}
+
+export async function getDashboardViewStats(): Promise<
+  ActionResult<DashboardViewStats>
 > {
   return runAction(async () => {
     const authUser = await requireRole("employee");
-    const rbacFilter = await buildCreatedByFilter(authUser);
+
+    const isAdmin = authUser.role === "admin" || authUser.role === "superadmin";
+
+    const shareLinkWhere = isAdmin ? {} : { createdBy: authUser.id };
+
     const accessibleLinks = await prisma.shareLink.findMany({
-      where: rbacFilter ?? {},
+      where: shareLinkWhere,
       select: { id: true },
     });
-    const accessibleLinkIds = accessibleLinks.map((l) => l.id);
-    if (rbacFilter !== undefined && accessibleLinkIds.length === 0) {
-      return ok({ views: [] });
+
+    if (!isAdmin && accessibleLinks.length === 0) {
+      return ok({ viewCountByShareId: {}, totalViews: 0, dailyBuckets: [] });
     }
+
+    const accessibleLinkIds = accessibleLinks.map((l) => l.id);
     const since = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
-    const views = await prisma.shareView.findMany({
-      where: {
-        viewedAt: { gte: since },
-        ...(rbacFilter !== undefined
-          ? { shareLinkId: { in: accessibleLinkIds } }
-          : {}),
-      },
-      select: {
-        id: true,
-        shareLinkId: true,
-        viewedAt: true,
-      },
-      orderBy: { viewedAt: "asc" },
-      take: 10_000,
+
+    const viewWhere = {
+      viewedAt: { gte: since },
+      ...(isAdmin ? {} : { shareLinkId: { in: accessibleLinkIds } }),
+    };
+
+    const perShareCounts = await prisma.shareView.groupBy({
+      by: ["shareLinkId"],
+      where: viewWhere,
+      _count: { id: true },
     });
-    return ok({ views });
+
+    const viewCountByShareId: Record<string, number> = {};
+    let totalViews = 0;
+    for (const row of perShareCounts) {
+      viewCountByShareId[row.shareLinkId] = row._count.id;
+      totalViews += row._count.id;
+    }
+
+    const rawBuckets = isAdmin
+      ? await prisma.$queryRaw<{ date: Date; views: bigint }[]>`
+          SELECT
+            date_trunc('day', "viewed_at") AS date,
+            COUNT(*) AS views
+          FROM share_views
+          WHERE "viewed_at" >= ${since}
+          GROUP BY date_trunc('day', "viewed_at")
+          ORDER BY date ASC
+        `
+      : await prisma.$queryRaw<{ date: Date; views: bigint }[]>`
+          SELECT
+            date_trunc('day', "viewed_at") AS date,
+            COUNT(*) AS views
+          FROM share_views
+          WHERE "viewed_at" >= ${since}
+            AND "share_link_id" = ANY(${accessibleLinkIds})
+          GROUP BY date_trunc('day', "viewed_at")
+          ORDER BY date ASC
+        `;
+
+    const dailyBuckets: DailyViewBucket[] = rawBuckets.map((row) => ({
+      date: row.date.toISOString().slice(0, 10),
+      views: Number(row.views),
+    }));
+
+    return ok({ viewCountByShareId, totalViews, dailyBuckets });
   });
 }
 
@@ -193,7 +190,6 @@ const createShareSchema = z.object({
   filterClientIds: z.array(z.uuid()).default([]),
   specificCaseStudyIds: z.array(z.uuid()).default([]),
 });
-
 export type CreateShareInput = z.infer<typeof createShareSchema>;
 
 export async function createShare(
@@ -203,7 +199,9 @@ export async function createShare(
     const user = await requireRole("employee");
     const data = createShareSchema.parse(input);
     const token = crypto.randomUUID();
+
     const passwordHash = hashPassword(data.password);
+
     const shareLink = await prisma.shareLink.create({
       data: {
         name: data.name,
@@ -224,9 +222,8 @@ export async function createShare(
       },
       select: { id: true, token: true },
     });
-    revalidatePath("/shares");
 
-    // FIX: Changed `/s/${shareLink.token}` to `/shares/${shareLink.token}` to match the Next.js route
+    revalidatePath("/shares");
     return ok({ id: shareLink.id, url: `/shares/${shareLink.token}` });
   });
 }
@@ -237,15 +234,19 @@ export async function revokeShare(input: {
   return runAction(async () => {
     const authUser = await requireRole("employee");
     const { id } = z.object({ id: z.uuid() }).parse(input);
-    const rbacFilter = await buildCreatedByFilter(authUser);
-    const whereClause = rbacFilter ? { id, ...rbacFilter } : { id };
+
+    const isAdmin = authUser.role === "admin" || authUser.role === "superadmin";
+    const whereClause = isAdmin ? { id } : { id, createdBy: authUser.id };
+
     const updated = await prisma.shareLink.updateMany({
       where: whereClause,
       data: { revoked: true },
     });
+
     if (!updated.count) {
       throw new ActionException("NOT_FOUND", "Not found");
     }
+
     revalidatePath("/shares");
     return ok({ success: true });
   });
@@ -257,14 +258,18 @@ export async function deleteShare(input: {
   return runAction(async () => {
     const authUser = await requireRole("employee");
     const { id } = z.object({ id: z.uuid() }).parse(input);
-    const rbacFilter = await buildCreatedByFilter(authUser);
-    const whereClause = rbacFilter ? { id, ...rbacFilter } : { id };
+
+    const isAdmin = authUser.role === "admin" || authUser.role === "superadmin";
+    const whereClause = isAdmin ? { id } : { id, createdBy: authUser.id };
+
     const deleted = await prisma.shareLink.deleteMany({
       where: whereClause,
     });
+
     if (!deleted.count) {
       throw new ActionException("NOT_FOUND", "Not found");
     }
+
     revalidatePath("/shares");
     return ok({ success: true });
   });

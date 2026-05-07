@@ -1,44 +1,42 @@
-/**
- * Typed result envelope for all Server Actions.
- * Callers can discriminate on `ok` without catching untyped exceptions.
- */
-export type ActionErrorCode =
-  | "UNAUTHORIZED"
-  | "NOT_FOUND"
-  | "VALIDATION"
-  | "FORBIDDEN"
-  | "SERVER_ERROR";
-
-export type ActionError = {
-  code: ActionErrorCode;
-  message: string;
-};
-
 export type ActionResult<T> =
   | { ok: true; data: T }
-  | { ok: false; error: ActionError };
+  | { ok: false; error: { code: string; message: string } };
 
 export function ok<T>(data: T): ActionResult<T> {
   return { ok: true, data };
 }
 
-export function err(
-  code: ActionErrorCode,
-  message: string,
-): ActionResult<never> {
+export function err<T = never>(code: string, message: string): ActionResult<T> {
   return { ok: false, error: { code, message } };
 }
 
-/**
- * Throws a well-typed error that action wrappers can catch and classify.
- * Use this inside Server Actions for domain errors.
- */
 export class ActionException extends Error {
   constructor(
-    public readonly code: ActionErrorCode,
+    public readonly code: string,
     message: string,
   ) {
     super(message);
     this.name = "ActionException";
+  }
+}
+
+export async function runAction<T>(
+  fn: () => Promise<ActionResult<T>>,
+): Promise<ActionResult<T>> {
+  const { z } = await import("zod");
+  try {
+    return await fn();
+  } catch (e) {
+    if (e instanceof ActionException) {
+      return err(e.code, e.message);
+    }
+    if (e instanceof z.ZodError) {
+      return err("VALIDATION", e.issues[0]?.message ?? "Validation failed");
+    }
+    console.error("[action error]", e);
+    return err(
+      "SERVER_ERROR",
+      e instanceof Error ? e.message : "An unexpected error occurred",
+    );
   }
 }

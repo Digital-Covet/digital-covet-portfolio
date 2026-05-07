@@ -1,10 +1,10 @@
 "use client";
 
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 import { createTaxonomy, deleteTaxonomy } from "@/actions/content";
-import { useRouter } from "next/navigation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,7 +68,10 @@ export function TaxonomyList({
       await createTaxonomy({
         type,
         name: name.trim(),
-        parentId: showParentSelect && parentId && parentId !== "__none__" ? parentId : undefined,
+        parentId:
+          showParentSelect && parentId && parentId !== "__none__"
+            ? parentId
+            : undefined,
       });
       setName("");
       setParentId("");
@@ -109,7 +112,9 @@ export function TaxonomyList({
           {showParentSelect && (
             <Select
               value={parentId || ""}
-              onValueChange={(v) => setParentId(v === "__none__" ? "" : v || "")}
+              onValueChange={(v) =>
+                setParentId(v === "__none__" ? "" : v || "")
+              }
             >
               <SelectTrigger>
                 <SelectValue>
@@ -144,11 +149,10 @@ export function TaxonomyList({
           {items.map((i) => (
             <div
               key={i.id}
-              className={`flex items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-muted ${
-                selectedId === i.id ? "bg-muted font-medium" : ""
-              }`}
+              className={`flex items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-muted ${selectedId === i.id ? "bg-muted font-medium" : ""
+                }`}
             >
-              <button
+              <Button
                 className="flex-1 text-left"
                 onClick={() => {
                   if (onSelect) {
@@ -158,10 +162,10 @@ export function TaxonomyList({
                 }}
               >
                 {i.name}
-              </button>
-              <button onClick={() => handleDeleteClick(i.id)}>
+              </Button>
+              <Button onClick={() => handleDeleteClick(i.id)}>
                 <TrashIcon size={16} />
-              </button>
+              </Button>
             </div>
           ))}
           {!items.length && (
@@ -184,7 +188,9 @@ export function TaxonomyList({
             <AlertDialogCancel onClick={() => setDeleteId(null)}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteConfirm}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteConfirm}>
+              Delete
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

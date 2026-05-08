@@ -62,6 +62,8 @@ export function TaxonomyList({
     (type === "industries" && parentType === "sectors") ||
     (type === "key_businesses" && parentType === "industries");
 
+  const showBusinessModelInput = type === "business_models";
+
   async function add() {
     if (!name.trim()) return;
     try {
@@ -134,17 +136,31 @@ export function TaxonomyList({
               </SelectContent>
             </Select>
           )}
-          <div className="flex gap-2">
-            <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Add…"
-              onKeyDown={(e) => e.key === "Enter" && add()}
-            />
-            <Button size="icon" onClick={add}>
-              <PlusIcon size={16} />
-            </Button>
-          </div>
+          {showBusinessModelInput ? (
+            <>
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Short name (e.g., B2B)"
+                onKeyDown={(e) => e.key === "Enter" && add()}
+              />
+              <Button onClick={add} disabled={!name.trim()}>
+                Add Business Model
+              </Button>
+            </>
+          ) : (
+            <div className="flex gap-2">
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Add…"
+                onKeyDown={(e) => e.key === "Enter" && add()}
+              />
+              <Button size="icon" onClick={add}>
+                <PlusIcon size={16} />
+              </Button>
+            </div>
+          )}
         </div>
         <div className="space-y-1">
           {items.map((i) => (

@@ -72,6 +72,7 @@ export default function Page() {
     services: [],
     sectors: [],
     keyBusinesses: [],
+    businessModels: [],
     clients: [],
   };
 

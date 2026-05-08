@@ -1,23 +1,10 @@
 import { UploadSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { useRef, useTransition } from "react";
 import { toast } from "sonner";
-import { uploadFile } from "@/actions/files";
+import { getUploadPresignedUrl } from "@/actions/files";
 import { Button } from "@/components/ui/button";
 
 type Bucket = "client-logos" | "case-study-media" | "case-study-attachments";
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const idx = result.indexOf(",");
-      resolve(idx >= 0 ? result.slice(idx + 1) : result);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 export function FileUploader({
   bucket,
@@ -36,25 +23,47 @@ export function FileUploader({
   async function handle(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+
     if (file.size > 15 * 1024 * 1024) {
       toast.error("File too large (max 15MB)");
       return;
     }
 
+    // Preserve the content type before any async boundaries
+    const contentType = file.type || "application/octet-stream";
+
     startTransition(async () => {
       try {
-        const dataBase64 = await fileToBase64(file);
-        const res = await uploadFile({
+        // Step 1: Request a pre-signed URL from the server
+        const res = await getUploadPresignedUrl({
           bucket,
           filename: file.name,
-          dataBase64,
-          contentType: file.type || "application/octet-stream",
+          contentType,
         });
+
         if (!res.ok) {
           toast.error(res.error.message);
           return;
         }
-        onUploaded({ url: res.data.url, name: file.name });
+
+        // Step 2: PUT the file directly to R2 using the pre-signed URL
+        const uploadRes = await fetch(res.data.presignedUrl, {
+          method: "PUT",
+          body: file,
+          headers: {
+            "Content-Type": contentType,
+          },
+        });
+
+        if (!uploadRes.ok) {
+          const detail = await uploadRes.text().catch(() => "");
+          console.error("R2 upload failed:", uploadRes.status, detail);
+          toast.error("Upload to storage failed");
+          return;
+        }
+
+        // Step 3: Surface the proxy URL to the parent form
+        onUploaded({ url: res.data.proxyUrl, name: file.name });
         toast.success("Uploaded");
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Upload failed");

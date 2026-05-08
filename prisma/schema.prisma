@@ -184,6 +184,16 @@ model KeyBusiness {
   @@map("key_businesses")
 }
 
+model BusinessModel {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+
+  caseStudyBusinessModels CaseStudyBusinessModel[]
+
+  @@map("business_models")
+}
+
 model ClientKeyBusiness {
   clientId      String @map("client_id")
   keyBusinessId String @map("key_business_id")
@@ -222,6 +232,7 @@ model CaseStudy {
   createdByUser          User?                  @relation("CaseStudyCreatedBy", fields: [createdBy], references: [id])
   caseStudyCategories    CaseStudyCategory[]
   caseStudyKeyBusinesses CaseStudyKeyBusiness[]
+  caseStudyBusinessModels CaseStudyBusinessModel[]
   caseStudyMetrics       CaseStudyMetric[]
   caseStudyServices      CaseStudyService[]
 
@@ -279,6 +290,18 @@ model CaseStudyKeyBusiness {
   @@id([caseStudyId, keyBusinessId])
   @@index([caseStudyId])
   @@map("case_study_key_businesses")
+}
+
+model CaseStudyBusinessModel {
+  caseStudyId    String @map("case_study_id")
+  businessModelId String @map("business_model_id")
+
+  caseStudy    CaseStudy    @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  businessModel BusinessModel @relation(fields: [businessModelId], references: [id], onDelete: Cascade)
+
+  @@id([caseStudyId, businessModelId])
+  @@index([caseStudyId])
+  @@map("case_study_business_models")
 }
 
 model ShareLink {

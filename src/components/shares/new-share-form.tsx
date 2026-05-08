@@ -138,23 +138,35 @@ export function NewShareForm({ taxonomies, studies }: NewShareFormProps) {
     setSubmitting(true);
     try {
       let filterSectorIds: string[] = sectors;
-    let filterIndustryIds: string[] = industries;
+      let filterIndustryIds: string[] = industries;
 
-    if (filterMode === "filter" && keyBusinesses.length > 0) {
-      const selectedKBs = taxonomies.keyBusinesses.filter(kb => keyBusinesses.includes(kb.id));
-      const relatedIndustries = [...new Set(selectedKBs.map(kb => kb.industryId).filter((id): id is string => !!id))];
-      const relatedSectors = [...new Set(
-        selectedKBs
-          .map(kb => taxonomies.industries.find(i => i.id === kb.industryId))
-          .filter((i): i is TaxonomyItem => !!i)
-          .map(i => i.sectorId)
-          .filter((id): id is string => !!id)
-      )];
-      filterIndustryIds = [...industries, ...relatedIndustries];
-      filterSectorIds = [...sectors, ...relatedSectors];
-    }
+      if (filterMode === "filter" && keyBusinesses.length > 0) {
+        const selectedKBs = taxonomies.keyBusinesses.filter((kb) =>
+          keyBusinesses.includes(kb.id),
+        );
+        const relatedIndustries = [
+          ...new Set(
+            selectedKBs
+              .map((kb) => kb.industryId)
+              .filter((id): id is string => !!id),
+          ),
+        ];
+        const relatedSectors = [
+          ...new Set(
+            selectedKBs
+              .map((kb) =>
+                taxonomies.industries.find((i) => i.id === kb.industryId),
+              )
+              .filter((i): i is TaxonomyItem => !!i)
+              .map((i) => i.sectorId)
+              .filter((id): id is string => !!id),
+          ),
+        ];
+        filterIndustryIds = [...industries, ...relatedIndustries];
+        filterSectorIds = [...sectors, ...relatedSectors];
+      }
 
-    const res = await createShare({
+      const res = await createShare({
         name: name.trim(),
         password,
         recipientName: recipientName || null,
@@ -385,13 +397,20 @@ export function NewShareForm({ taxonomies, studies }: NewShareFormProps) {
                     if (isSelected) {
                       toggle(keyBusinesses, setKeyBusinesses, id);
                     } else {
-                      const kb = taxonomies.keyBusinesses.find(k => k.id === id);
+                      const kb = taxonomies.keyBusinesses.find(
+                        (k) => k.id === id,
+                      );
                       if (kb?.industryId) {
                         setKeyBusinesses([...keyBusinesses, id]);
                         if (!industries.includes(kb.industryId)) {
                           setIndustries([...industries, kb.industryId]);
-                          const ind = taxonomies.industries.find(i => i.id === kb.industryId);
-                          if (ind?.sectorId && !sectors.includes(ind.sectorId)) {
+                          const ind = taxonomies.industries.find(
+                            (i) => i.id === kb.industryId,
+                          );
+                          if (
+                            ind?.sectorId &&
+                            !sectors.includes(ind.sectorId)
+                          ) {
                             setSectors([...sectors, ind.sectorId]);
                           }
                         }

@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  type CaseStudyListItemWithDates,
-  listCaseStudies,
-  listTaxonomies,
-} from "@/actions/content";
+import { listCaseStudies } from "@/actions/case-studies";
 import {
   type DashboardViewStats,
   getDashboardViewStats,
   listShares,
   type ShareLinkItem,
 } from "@/actions/share";
-import type { Taxonomies } from "@/types/case-studies";
+import { listTaxonomies } from "@/actions/taxonomies";
+import type {
+  CaseStudyListItemWithDates,
+  Taxonomies,
+} from "@/types/case-studies";
 
 export interface DashboardData {
   studies: CaseStudyListItemWithDates[];

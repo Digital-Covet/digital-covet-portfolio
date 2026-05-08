@@ -3,8 +3,8 @@ import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { deleteClient, upsertClient } from "@/actions/content";
-import type { Taxonomies } from "@/types/case-studies";
+import { deleteClient, upsertClient } from "@/actions/clients";
+import { FileUploader, ImagePreview } from "@/components/file-uploader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,26 +14,19 @@ import {
   AlertDialogFooter,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { FileUploader, ImagePreview } from "@/components/file-uploader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import type { Taxonomies } from "@/types/case-studies";
 
 type EditingClient =
   | Taxonomies["clients"][number]
   | {
-      id?: string;
-      name: string;
-      logoUrl: string | null;
-    };
+    id?: string;
+    name: string;
+    logoUrl: string | null;
+  };
 
 export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
   const router = useRouter();
@@ -84,9 +77,7 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
           </p>
         </div>
         <Button
-          onClick={() =>
-            setEditing({ name: "", logoUrl: null })
-          }
+          onClick={() => setEditing({ name: "", logoUrl: null })}
           disabled={isPending}
         >
           <PlusIcon size={16} className="mr-2" /> New client

@@ -1,4 +1,4 @@
-import { listTaxonomies } from "@/actions/content";
+import { listTaxonomies } from "@/actions/taxonomies";
 import { ClientsPage } from "@/components/clients/client-page";
 
 export const dynamic = "force-dynamic";

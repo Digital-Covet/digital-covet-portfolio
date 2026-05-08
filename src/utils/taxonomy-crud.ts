@@ -18,46 +18,42 @@ export class TaxonomyInUseError extends Error {
   }
 }
 
-export async function createTaxonomyItem(
-  type: TaxonomyType,
-  name: string,
-  parentId?: string,
-) {
-  switch (type) {
-    case "industries":
-      return prisma.industry.create({
-        data: { name, sectorId: parentId ?? null },
-      });
-    case "work_categories":
-      return prisma.workCategory.create({ data: { name } });
-    case "services":
-      return prisma.service.create({ data: { name } });
-    case "sectors":
-      return prisma.sector.create({ data: { name } });
-    case "key_businesses":
-      return prisma.keyBusiness.create({
-        data: { name, industryId: parentId ?? null },
-      });
-    default:
-      throw new Error(`Unknown taxonomy type: ${type}`);
-  }
-}
+type TaxonomyHandler = {
+  create: (
+    name: string,
+    parentId?: string,
+  ) => Promise<{ id: string; name: string }>;
+  delete: (id: string) => Promise<void>;
+  getDeletionBlocker: (id: string) => Promise<string | null>;
+};
 
-export async function getTaxonomyDeletionBlocker(
-  type: TaxonomyType,
-  id: string,
-): Promise<string | null> {
-  switch (type) {
-    case "industries": {
+const alwaysDeletable = async () => null;
+
+const taxonomyHandlers: Record<TaxonomyType, TaxonomyHandler> = {
+  industries: {
+    create: (name, parentId) =>
+      prisma.industry.create({
+        data: { name, sectorId: parentId ?? null },
+        select: { id: true, name: true },
+      }),
+    delete: (id) => prisma.industry.delete({ where: { id } }).then(() => {}),
+    getDeletionBlocker: async (id) => {
       const count = await prisma.keyBusiness.count({
         where: { industryId: id },
       });
-      if (count > 0) {
-        return `Cannot delete: this industry has ${count} key business${count > 1 ? "es" : ""}. Delete them first.`;
-      }
-      return null;
-    }
-    case "sectors": {
+      return count > 0
+        ? `Cannot delete: this industry has ${count} key business${count > 1 ? "es" : ""}. Delete them first.`
+        : null;
+    },
+  },
+  sectors: {
+    create: (name) =>
+      prisma.sector.create({
+        data: { name },
+        select: { id: true, name: true },
+      }),
+    delete: (id) => prisma.sector.delete({ where: { id } }).then(() => {}),
+    getDeletionBlocker: async (id) => {
       const industries = await prisma.industry.findMany({
         where: { sectorId: id },
         include: { keyBusinesses: { select: { id: true } } },
@@ -73,11 +69,51 @@ export async function getTaxonomyDeletionBlocker(
         return `Cannot delete: this sector has ${industries.length} industr${industries.length > 1 ? "ies" : "y"}. Delete them first.`;
       }
       return null;
-    }
+    },
+  },
+  work_categories: {
+    create: (name) =>
+      prisma.workCategory.create({
+        data: { name },
+        select: { id: true, name: true },
+      }),
+    delete: (id) =>
+      prisma.workCategory.delete({ where: { id } }).then(() => {}),
+    getDeletionBlocker: alwaysDeletable,
+  },
+  services: {
+    create: (name) =>
+      prisma.service.create({
+        data: { name },
+        select: { id: true, name: true },
+      }),
+    delete: (id) => prisma.service.delete({ where: { id } }).then(() => {}),
+    getDeletionBlocker: alwaysDeletable,
+  },
+  key_businesses: {
+    create: (name, parentId) =>
+      prisma.keyBusiness.create({
+        data: { name, industryId: parentId ?? null },
+        select: { id: true, name: true },
+      }),
+    delete: (id) => prisma.keyBusiness.delete({ where: { id } }).then(() => {}),
+    getDeletionBlocker: alwaysDeletable,
+  },
+};
 
-    default:
-      return null;
-  }
+export async function createTaxonomyItem(
+  type: TaxonomyType,
+  name: string,
+  parentId?: string,
+) {
+  return taxonomyHandlers[type].create(name, parentId);
+}
+
+export async function getTaxonomyDeletionBlocker(
+  type: TaxonomyType,
+  id: string,
+): Promise<string | null> {
+  return taxonomyHandlers[type].getDeletionBlocker(id);
 }
 
 export async function deleteTaxonomyItem(type: TaxonomyType, id: string) {
@@ -85,26 +121,6 @@ export async function deleteTaxonomyItem(type: TaxonomyType, id: string) {
   if (blocker) {
     throw new TaxonomyInUseError(blocker);
   }
-
-  switch (type) {
-    case "industries":
-      await prisma.industry.delete({ where: { id } });
-      break;
-    case "work_categories":
-      await prisma.workCategory.delete({ where: { id } });
-      break;
-    case "services":
-      await prisma.service.delete({ where: { id } });
-      break;
-    case "sectors":
-      await prisma.sector.delete({ where: { id } });
-      break;
-    case "key_businesses":
-      await prisma.keyBusiness.delete({ where: { id } });
-      break;
-    default:
-      throw new Error(`Unknown taxonomy type: ${type}`);
-  }
-
+  await taxonomyHandlers[type].delete(id);
   return { success: true };
 }

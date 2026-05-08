@@ -4,7 +4,7 @@ import { z } from "zod";
 import { prisma } from "@/db";
 import { requireRole } from "@/lib/auth.server";
 import { generateToken, hashPassword } from "@/lib/password";
-import { buildCreatedByFilter } from "@/lib/rbac";
+import { buildCreatedByFilter, getDeptUserIds } from "@/lib/rbac";
 
 const createShareSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(200),
@@ -101,7 +101,7 @@ export async function createShare(input: CreateShareInput) {
 
 export async function listShares() {
   const user = await requireRole("employee");
-  const rbacFilter = await buildCreatedByFilter(user);
+  const rbacFilter = await buildCreatedByFilter(user, getDeptUserIds);
   const shares = await prisma.shareLink.findMany({
     where: { ...rbacFilter },
     orderBy: { createdAt: "desc" },
@@ -121,7 +121,7 @@ export async function listShares() {
 export async function revokeShare(id: string) {
   const user = await requireRole("employee");
   const { id: validatedId } = revokeShareSchema.parse({ id });
-  const rbacFilter = await buildCreatedByFilter(user);
+  const rbacFilter = await buildCreatedByFilter(user, getDeptUserIds);
   const result = await prisma.shareLink.updateMany({
     where: { id: validatedId, ...rbacFilter },
     data: { revoked: true },
@@ -141,7 +141,7 @@ export async function getShareViews(shareLinkId: string) {
   const { shareLinkId: validatedId } = getShareViewsSchema.parse({
     shareLinkId,
   });
-  const rbacFilter = await buildCreatedByFilter(user);
+  const rbacFilter = await buildCreatedByFilter(user, getDeptUserIds);
   const share = await prisma.shareLink.findFirst({
     where: { id: validatedId, ...rbacFilter },
     select: { id: true, name: true },

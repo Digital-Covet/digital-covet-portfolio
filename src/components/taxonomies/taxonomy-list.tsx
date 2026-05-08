@@ -4,7 +4,7 @@ import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { createTaxonomy, deleteTaxonomy } from "@/actions/content";
+import { createTaxonomy, deleteTaxonomy } from "@/actions/taxonomies";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -149,11 +149,11 @@ export function TaxonomyList({
           {items.map((i) => (
             <div
               key={i.id}
-              className={`flex items-center justify-between rounded px-2 py-1.5 text-sm hover:bg-muted ${selectedId === i.id ? "bg-muted font-medium" : ""
+              className={`flex items-center justify-between rounded text-sm hover:bg-muted ${selectedId === i.id ? "bg-muted font-medium" : ""
                 }`}
             >
               <Button
-                className="flex-1 text-left"
+                className="flex-1 text-left bg-muted text-black"
                 onClick={() => {
                   if (onSelect) {
                     setSelectedId(selectedId === i.id ? null : i.id);
@@ -163,7 +163,10 @@ export function TaxonomyList({
               >
                 {i.name}
               </Button>
-              <Button onClick={() => handleDeleteClick(i.id)}>
+              <Button
+                className="bg-muted text-black"
+                onClick={() => handleDeleteClick(i.id)}
+              >
                 <TrashIcon size={16} />
               </Button>
             </div>

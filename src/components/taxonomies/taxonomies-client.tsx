@@ -18,13 +18,11 @@ interface TaxonomyDataMap {
   services: TaxonomyData[];
 }
 
-export function TaxonomiesClient({
-  data,
-}: {
-  data: TaxonomyDataMap;
-}) {
+export function TaxonomiesClient({ data }: { data: TaxonomyDataMap }) {
   const [selectedSectorId, setSelectedSectorId] = useState<string | null>(null);
-  const [selectedIndustryId, setSelectedIndustryId] = useState<string | null>(null);
+  const [selectedIndustryId, setSelectedIndustryId] = useState<string | null>(
+    null,
+  );
 
   const visibleIndustries = selectedSectorId
     ? data.industries.filter((i) => i.sectorId === selectedSectorId)

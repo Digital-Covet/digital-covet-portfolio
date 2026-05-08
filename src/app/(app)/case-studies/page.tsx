@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { deleteCaseStudy, listCaseStudies } from "@/actions/content";
+import { deleteCaseStudy, listCaseStudies } from "@/actions/case-studies";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -129,11 +129,10 @@ export default function CaseStudiesListPage() {
               key={f}
               type="button"
               onClick={() => setFilter(f)}
-              className={`rounded px-3 py-1 text-xs font-medium capitalize transition-colors ${
-                filter === f
+              className={`rounded px-3 py-1 text-xs font-medium capitalize transition-colors ${filter === f
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted"
-              }`}
+                }`}
             >
               {f}
             </button>
@@ -171,7 +170,8 @@ export default function CaseStudiesListPage() {
                   <div className="truncate font-semibold">{s.title}</div>
                   <div className="truncate text-xs text-muted-foreground">
                     {s.client?.name ?? "No client"} ·{" "}
-                    {s.keyBusinesses.map((k) => k.name).join(", ") || "No key business"}
+                    {s.keyBusinesses.map((k) => k.name).join(", ") ||
+                      "No key business"}
                   </div>
                 </div>
               </div>

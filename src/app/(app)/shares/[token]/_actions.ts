@@ -31,11 +31,11 @@ export type ShareStatus = "ok" | "expired" | "revoked" | "limit";
 export type ShareInfo =
   | { exists: false }
   | {
-    exists: true;
-    name: string;
-    status: ShareStatus;
-    unlocked: boolean;
-  };
+      exists: true;
+      name: string;
+      status: ShareStatus;
+      unlocked: boolean;
+    };
 
 export type SerializedStudy = {
   id: string;
@@ -294,9 +294,7 @@ export async function getShareContent(token: string): Promise<ShareContent> {
     client: s.client
       ? { name: s.client.name, logoUrl: s.client.logoUrl }
       : null,
-    keyBusinesses: s.caseStudyKeyBusinesses.map(
-      (k) => k.keyBusiness,
-    ),
+    keyBusinesses: s.caseStudyKeyBusinesses.map((k) => k.keyBusiness),
   }));
 
   const serializedMetrics: SerializedMetric[] = metrics.map((m) => ({

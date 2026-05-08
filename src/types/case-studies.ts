@@ -1,23 +1,12 @@
 import type { Prisma } from "@generated/prisma/client";
+import type { Client } from "./client";
+import type {
+  IndustryWithSector,
+  KeyBusinessWithIndustry,
+  Taxonomy,
+} from "./taxonomy";
 
-export type Taxonomy = {
-  id: string;
-  name: string;
-};
-
-export type IndustryWithSector = Taxonomy & {
-  sectorId: string | null;
-};
-
-export type KeyBusinessWithIndustry = Taxonomy & {
-  industryId: string | null;
-};
-
-export type Client = {
-  id: string;
-  name: string;
-  logoUrl: string | null;
-};
+export type { Taxonomy, IndustryWithSector, KeyBusinessWithIndustry, Client };
 
 export type Taxonomies = {
   industries: IndustryWithSector[];
@@ -47,7 +36,6 @@ export type Basics = {
   sectorId: string | null;
   industryId: string | null;
   keyBusinessIds: string[];
-
   projectDate: string | null;
   status: "draft" | "published" | "archived";
 };
@@ -117,4 +105,11 @@ export type CaseStudyListItem = {
   heroImageUrl: string | null;
   client: { name: string } | null;
   keyBusinesses: { name: string; industryId: string }[];
+};
+
+export type CaseStudyListItemWithDates = CaseStudyListItem & {
+  createdAt: Date;
+  updatedAt: Date;
+  keyBusinesses: { name: string; industryId: string }[];
+  clientId: string | null;
 };

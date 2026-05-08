@@ -83,8 +83,11 @@ export function mapDbToForm(db: CaseStudyResponse): CaseStudyForm {
       title: study.title,
       slug: study.slug,
       clientId: study.clientId,
-      sectorId: study.caseStudyKeyBusinesses[0]?.keyBusiness?.industry?.sectorId ?? null,
-      industryId: study.caseStudyKeyBusinesses[0]?.keyBusiness?.industryId ?? null,
+      sectorId:
+        study.caseStudyKeyBusinesses[0]?.keyBusiness?.industry?.sectorId ??
+        null,
+      industryId:
+        study.caseStudyKeyBusinesses[0]?.keyBusiness?.industryId ?? null,
       keyBusinessIds: study.caseStudyKeyBusinesses.map((k) => k.keyBusinessId),
 
       projectDate: study.projectDate
@@ -143,5 +146,7 @@ export function buildSavePayload(form: CaseStudyForm) {
     metrics: form.metrics.filter((m): m is Metric =>
       Boolean(m.label && m.value),
     ),
-  } satisfies Parameters<typeof import("@/actions/content").upsertCaseStudy>[0];
+  } satisfies Parameters<
+    typeof import("@/actions/case-studies").upsertCaseStudy
+  >[0];
 }

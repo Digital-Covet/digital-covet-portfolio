@@ -6,7 +6,6 @@ import {
   FileXlsIcon,
 } from "@phosphor-icons/react";
 import { format } from "date-fns";
-import type { CaseStudyListItemWithDates } from "@/actions/content";
 import type { ShareLinkItem } from "@/actions/share";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +15,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { DashboardStats } from "@/hooks/useDashboardDerivedData";
-import type { Taxonomies } from "@/types/case-studies";
+import type {
+  CaseStudyListItemWithDates,
+  Taxonomies,
+} from "@/types/case-studies";
 import { getShareStatus } from "@/utils/shareStatus";
 
 interface JsPDFDocument {

@@ -1,5 +1,5 @@
-import type { CaseStudyListItemWithDates } from "@/actions/content";
 import type { ShareLinkItem } from "@/actions/share";
+import type { CaseStudyListItemWithDates } from "@/types/case-studies";
 
 export interface ActivityItem {
   id: string;

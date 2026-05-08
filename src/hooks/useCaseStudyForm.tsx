@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { upsertCaseStudy } from "@/actions/content";
+import { upsertCaseStudy } from "@/actions/case-studies";
 import type {
   Attachment,
   CaseStudyForm,

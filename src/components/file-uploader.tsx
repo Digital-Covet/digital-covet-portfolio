@@ -1,7 +1,7 @@
 import { UploadSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { useRef, useTransition } from "react";
 import { toast } from "sonner";
-import { uploadFile } from "@/actions/content";
+import { uploadFile } from "@/actions/files";
 import { Button } from "@/components/ui/button";
 
 type Bucket = "client-logos" | "case-study-media" | "case-study-attachments";

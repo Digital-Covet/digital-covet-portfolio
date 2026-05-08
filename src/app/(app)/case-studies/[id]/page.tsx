@@ -2,7 +2,8 @@ import { ArrowLeftIcon } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getCaseStudy, listTaxonomies } from "@/actions/content";
+import { getCaseStudy } from "@/actions/case-studies";
+import { listTaxonomies } from "@/actions/taxonomies";
 import { CaseStudyEditorShell } from "@/components/case-studies/editor-shell";
 
 interface Props {

@@ -202,7 +202,9 @@ export default function SharePage({
               <div className="p-5">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   {s.keyBusinesses.map((kb) => (
-                    <Badge key={kb.name} variant="secondary">{kb.name}</Badge>
+                    <Badge key={kb.name} variant="secondary">
+                      {kb.name}
+                    </Badge>
                   ))}
                   {s.client?.name && <span>· {s.client.name}</span>}
                 </div>
@@ -263,7 +265,9 @@ function CaseStudyDetail({
         {}
         <div className="flex items-center gap-3 text-xs">
           {study.keyBusinesses.map((kb) => (
-            <Badge key={kb.name} variant="secondary">{kb.name}</Badge>
+            <Badge key={kb.name} variant="secondary">
+              {kb.name}
+            </Badge>
           ))}
           {study.client?.name && (
             <span className="text-muted-foreground">{study.client.name}</span>

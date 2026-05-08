@@ -8,8 +8,8 @@ import {
   subDays,
 } from "date-fns";
 import { useMemo } from "react";
-import type { CaseStudyListItemWithDates } from "@/actions/content";
 import type { DashboardViewStats, ShareLinkItem } from "@/actions/share";
+import type { CaseStudyListItemWithDates } from "@/types/case-studies";
 import {
   type ActivityItem,
   buildActivityFeed,

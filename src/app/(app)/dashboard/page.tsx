@@ -190,8 +190,8 @@ export default function Page() {
                   {filters.industryId === "all"
                     ? "All industries"
                     : taxonomies.industries.find(
-                      (i) => i.id === filters.industryId,
-                    )?.name}
+                        (i) => i.id === filters.industryId,
+                      )?.name}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -221,7 +221,7 @@ export default function Page() {
                   {filters.clientId === "all"
                     ? "All clients"
                     : taxonomies.clients.find((c) => c.id === filters.clientId)
-                      ?.name}
+                        ?.name}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -485,10 +485,11 @@ function ActivityRow({ item }: { item: ActivityItem }) {
       className="flex items-start gap-3 rounded-md p-2 transition-colors hover:bg-muted"
     >
       <div
-        className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${item.type === "case_study"
+        className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
+          item.type === "case_study"
             ? "bg-primary/10 text-primary"
             : "bg-secondary text-secondary-foreground"
-          }`}
+        }`}
       >
         {item.type === "case_study" ? (
           item.action === "created" ? (

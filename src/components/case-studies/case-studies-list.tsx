@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
-import { deleteCaseStudy, listCaseStudies } from "@/actions/content";
+import { deleteCaseStudy, listCaseStudies } from "@/actions/case-studies";
 import {
   AlertDialog,
   AlertDialogAction,

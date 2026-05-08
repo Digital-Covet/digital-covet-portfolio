@@ -1,4 +1,4 @@
-import { listTaxonomies } from "@/actions/content";
+import { listTaxonomies } from "@/actions/taxonomies";
 import { TaxonomiesClient } from "@/components/taxonomies/taxonomies-client";
 
 export const dynamic = "force-dynamic";

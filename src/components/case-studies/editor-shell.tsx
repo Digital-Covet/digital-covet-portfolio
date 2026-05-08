@@ -95,7 +95,9 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
           onSlugChange={(slug) => updateBasics("slug", slug)}
           onClientChange={(clientId) => updateBasics("clientId", clientId)}
           onSectorChange={(sectorId) => updateBasics("sectorId", sectorId)}
-          onIndustryChange={(industryId) => updateBasics("industryId", industryId)}
+          onIndustryChange={(industryId) =>
+            updateBasics("industryId", industryId)
+          }
           onKeyBusinessIdsChange={(keyBusinessIds) =>
             updateBasics("keyBusinessIds", keyBusinessIds)
           }

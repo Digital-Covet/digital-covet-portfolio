@@ -1,12 +1,12 @@
 import { SharesList } from "@/components/shares/shares-list";
 import { prisma } from "@/db";
 import { requireRole } from "@/lib/auth.server";
-import { buildCreatedByFilter } from "@/lib/rbac";
+import { buildCreatedByFilter, getDeptUserIds } from "@/lib/rbac";
 import type { SerializedShare } from "./actions";
 
 export default async function SharesListPage() {
   const user = await requireRole("employee");
-  const rbacFilter = await buildCreatedByFilter(user);
+  const rbacFilter = await buildCreatedByFilter(user, getDeptUserIds);
 
   const shares = await prisma.shareLink.findMany({
     where: { ...rbacFilter },

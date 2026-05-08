@@ -14,6 +14,7 @@ export type Taxonomies = {
   services: Taxonomy[];
   sectors: Taxonomy[];
   keyBusinesses: KeyBusinessWithIndustry[];
+  businessModels: Taxonomy[];
   clients: Client[];
 };
 

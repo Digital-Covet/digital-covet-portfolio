@@ -35,27 +35,36 @@ async function runTaxonomyAction<T>(
 export async function listTaxonomies(): Promise<ActionResult<Taxonomies>> {
   return runTaxonomyAction(async () => {
     await requireRole("employee");
-    const [industries, categories, services, sectors, keyBusinesses, clients] =
-      await Promise.all([
-        prisma.industry.findMany({
-          orderBy: { name: "asc" },
-          select: { id: true, name: true, sectorId: true },
-        }),
-        prisma.workCategory.findMany({ orderBy: { name: "asc" } }),
-        prisma.service.findMany({ orderBy: { name: "asc" } }),
-        prisma.sector.findMany({ orderBy: { name: "asc" } }),
-        prisma.keyBusiness.findMany({
-          orderBy: { name: "asc" },
-          select: { id: true, name: true, industryId: true },
-        }),
-        prisma.client.findMany({ orderBy: { name: "asc" } }),
-      ]);
+    const [
+      industries,
+      categories,
+      services,
+      sectors,
+      keyBusinesses,
+      businessModels,
+      clients,
+    ] = await Promise.all([
+      prisma.industry.findMany({
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, sectorId: true },
+      }),
+      prisma.workCategory.findMany({ orderBy: { name: "asc" } }),
+      prisma.service.findMany({ orderBy: { name: "asc" } }),
+      prisma.sector.findMany({ orderBy: { name: "asc" } }),
+      prisma.keyBusiness.findMany({
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, industryId: true },
+      }),
+      prisma.businessModel.findMany({ orderBy: { name: "asc" } }),
+      prisma.client.findMany({ orderBy: { name: "asc" } }),
+    ]);
     return ok({
       industries,
       categories,
       services,
       sectors,
       keyBusinesses,
+      businessModels,
       clients,
     });
   });

@@ -1,5 +1,5 @@
+// src/components/case-studies/editor-shell.tsx (refactored)
 "use client";
-
 import {
   BasicsSection,
   MediaSection,
@@ -30,8 +30,6 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
     form,
     saving,
     isNew,
-    updateBasics,
-    updateMedia,
     updateStory,
     updateTestimonial,
     toggleCategory,
@@ -43,8 +41,9 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
     addGalleryImage,
     addAttachment,
     removeAttachment,
-    handleTitleChange,
     save,
+    basicsHandlers,
+    mediaHandlers,
   } = useCaseStudyForm({ id, initialData, taxonomies });
 
   return (
@@ -53,12 +52,13 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
         <h1 className="text-3xl font-bold tracking-tight">
           {isNew ? "New case study" : "Edit case study"}
         </h1>
-
         <div className="flex items-center gap-2">
           <Select
             value={form.basics.status}
             onValueChange={(v) =>
-              updateBasics("status", v as "draft" | "published" | "archived")
+              basicsHandlers.onStatusChange(
+                v as "draft" | "published" | "archived",
+              )
             }
           >
             <SelectTrigger className="w-32">
@@ -70,7 +70,6 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
               <SelectItem value="archived">Archived</SelectItem>
             </SelectContent>
           </Select>
-
           <Button onClick={save} disabled={saving}>
             {saving ? "Saving…" : "Save"}
           </Button>
@@ -91,20 +90,14 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
           sectors={taxonomies.sectors}
           industries={taxonomies.industries}
           keyBusinesses={taxonomies.keyBusinesses}
-          onTitleChange={handleTitleChange}
-          onSlugChange={(slug) => updateBasics("slug", slug)}
-          onClientChange={(clientId) => updateBasics("clientId", clientId)}
-          onSectorChange={(sectorId) => updateBasics("sectorId", sectorId)}
-          onIndustryChange={(industryId) =>
-            updateBasics("industryId", industryId)
-          }
-          onKeyBusinessIdsChange={(keyBusinessIds) =>
-            updateBasics("keyBusinessIds", keyBusinessIds)
-          }
-          onProjectDateChange={(projectDate) =>
-            updateBasics("projectDate", projectDate)
-          }
-          onVideoEmbedChange={(url) => updateMedia("videoEmbedUrl", url)}
+          onTitleChange={basicsHandlers.onTitleChange}
+          onSlugChange={basicsHandlers.onSlugChange}
+          onClientChange={basicsHandlers.onClientChange}
+          onSectorChange={basicsHandlers.onSectorChange}
+          onIndustryChange={basicsHandlers.onIndustryChange}
+          onKeyBusinessIdsChange={basicsHandlers.onKeyBusinessIdsChange}
+          onProjectDateChange={basicsHandlers.onProjectDateChange}
+          onVideoEmbedChange={mediaHandlers.onVideoEmbedChange}
         />
 
         <TagsSection
@@ -120,7 +113,7 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
           heroImageUrl={form.media.heroImageUrl}
           galleryUrls={form.media.galleryUrls}
           attachments={form.media.attachments}
-          onHeroChange={(url) => updateMedia("heroImageUrl", url)}
+          onHeroChange={mediaHandlers.onHeroChange}
           onGalleryAdd={addGalleryImage}
           onGalleryRemove={removeGalleryImage}
           onAttachmentAdd={addAttachment}

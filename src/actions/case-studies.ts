@@ -17,6 +17,7 @@ import type {
   CaseStudyListItemWithDates,
   CaseStudyResponse,
 } from "@/types/case-studies";
+import { syncCaseStudyRelations } from "./case-studies/helpers";
 
 async function getDeptUserIds(deptId: string): Promise<string[]> {
   const users = await prisma.user.findMany({
@@ -57,6 +58,7 @@ export async function upsertCaseStudy(
       : never;
     const result = await prisma.$transaction(async (tx) => {
       let id = data.id;
+
       if (id) {
         const whereClause = rbacFilter ? { id, ...rbacFilter } : { id };
         const updated = await tx.caseStudy.updateMany({
@@ -73,50 +75,14 @@ export async function upsertCaseStudy(
         });
         id = row.id;
       }
-      await tx.caseStudyCategory.deleteMany({ where: { caseStudyId: id! } });
-      await tx.caseStudyService.deleteMany({ where: { caseStudyId: id! } });
-      await tx.caseStudyMetric.deleteMany({ where: { caseStudyId: id! } });
-      await tx.caseStudyKeyBusiness.deleteMany({
-        where: { caseStudyId: id! },
+
+      await syncCaseStudyRelations(tx, id!, {
+        categoryIds: data.categoryIds,
+        serviceIds: data.serviceIds,
+        keyBusinessIds: data.keyBusinessIds,
+        metrics: data.metrics,
       });
-      if (data.categoryIds.length) {
-        await tx.caseStudyCategory.createMany({
-          data: data.categoryIds.map((categoryId) => ({
-            caseStudyId: id!,
-            categoryId,
-          })),
-          skipDuplicates: true,
-        });
-      }
-      if (data.serviceIds.length) {
-        await tx.caseStudyService.createMany({
-          data: data.serviceIds.map((serviceId) => ({
-            caseStudyId: id!,
-            serviceId,
-          })),
-          skipDuplicates: true,
-        });
-      }
-      if (data.keyBusinessIds.length) {
-        await tx.caseStudyKeyBusiness.createMany({
-          data: data.keyBusinessIds.map((keyBusinessId) => ({
-            caseStudyId: id!,
-            keyBusinessId,
-          })),
-          skipDuplicates: true,
-        });
-      }
-      if (data.metrics.length) {
-        await tx.caseStudyMetric.createMany({
-          data: data.metrics.map((m, sortOrder) => ({
-            caseStudyId: id!,
-            label: m.label,
-            value: m.value,
-            unit: m.unit ?? null,
-            sortOrder,
-          })),
-        });
-      }
+
       return { id: id! };
     });
     revalidatePath("/case-studies");
@@ -154,11 +120,11 @@ export async function listCaseStudies(
         ...(opts.status ? { status: opts.status } : {}),
         ...(opts.search
           ? {
-              title: {
-                contains: opts.search,
-                mode: "insensitive" as const,
-              },
-            }
+            title: {
+              contains: opts.search,
+              mode: "insensitive" as const,
+            },
+          }
           : {}),
       },
       orderBy: { createdAt: "desc" },

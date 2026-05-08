@@ -33,6 +33,7 @@ const EMPTY_TAXONOMIES: Taxonomies = {
   services: [],
   sectors: [],
   keyBusinesses: [],
+  businessModels: [],
   clients: [],
 };
 

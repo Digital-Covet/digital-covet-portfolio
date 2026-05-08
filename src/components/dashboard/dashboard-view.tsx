@@ -66,6 +66,7 @@ export function DashboardView() {
     services: [],
     sectors: [],
     keyBusinesses: [],
+    businessModels: [],
     clients: [],
   };
 

@@ -14,6 +14,7 @@ interface TaxonomyDataMap {
   sectors: TaxonomyData[];
   industries: TaxonomyData[];
   keyBusinesses: TaxonomyData[];
+  businessModels: TaxonomyData[];
   categories: TaxonomyData[];
   services: TaxonomyData[];
 }
@@ -65,6 +66,11 @@ export function TaxonomiesClient({ data }: { data: TaxonomyDataMap }) {
         items={data.categories}
       />
       <TaxonomyList title="Services" type="services" items={data.services} />
+      <TaxonomyList
+        title="Business Models"
+        type="business_models"
+        items={data.businessModels}
+      />
     </div>
   );
 }

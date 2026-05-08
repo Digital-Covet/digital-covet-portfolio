@@ -7,6 +7,7 @@ export const taxonomyTypeSchema = z.enum([
   "services",
   "sectors",
   "key_businesses",
+  "business_models",
 ]);
 
 export type TaxonomyType = z.infer<typeof taxonomyTypeSchema>;
@@ -97,6 +98,16 @@ const taxonomyHandlers: Record<TaxonomyType, TaxonomyHandler> = {
         select: { id: true, name: true },
       }),
     delete: (id) => prisma.keyBusiness.delete({ where: { id } }).then(() => {}),
+    getDeletionBlocker: alwaysDeletable,
+  },
+  business_models: {
+    create: (name) =>
+      prisma.businessModel.create({
+        data: { name },
+        select: { id: true, name: true },
+      }),
+    delete: (id) =>
+      prisma.businessModel.delete({ where: { id } }).then(() => {}),
     getDeletionBlocker: alwaysDeletable,
   },
 };

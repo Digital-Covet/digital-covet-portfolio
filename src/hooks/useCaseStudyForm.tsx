@@ -1,9 +1,7 @@
 "use client";
-
 import { useRouter } from "next/navigation";
-import { useCallback, useState, useTransition } from "react";
+import { useCallback, useMemo, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
-
 import { upsertCaseStudy } from "@/actions/case-studies";
 import type {
   Attachment,
@@ -40,6 +38,10 @@ export function useCaseStudyForm({
   const [form, setForm] = useState<CaseStudyForm>(() =>
     initialData ? mapDbToForm(initialData) : createEmptyForm(),
   );
+
+  // Ref to always access current form state without subscribing to changes
+  const formRef = useRef(form);
+  formRef.current = form;
 
   const [isPending, startTransition] = useTransition();
 
@@ -187,54 +189,73 @@ export function useCaseStudyForm({
     [isNew],
   );
 
+  // FIXED: Uses formRef instead of `form` in deps — callback is now stable
   const save = useCallback(() => {
-    if (!form.basics.title.trim()) {
+    const currentForm = formRef.current;
+    if (!currentForm.basics.title.trim()) {
       toast.error("Title is required");
       return;
     }
-
     startTransition(async () => {
-      const payload = buildSavePayload(form);
+      const payload = buildSavePayload(currentForm);
       const result = await upsertCaseStudy(payload);
-
       if (!result.ok) {
         toast.error(result.error.message);
         return;
       }
-
       toast.success("Saved");
       if (isNew) {
         router.push(`/case-studies/${result.data.id}`);
       }
     });
-  }, [form, isNew, router]);
+  }, [isNew, router]);
+
+  // FIXED: Stabilized callback wrappers so section components don't re-render
+  // on unrelated state changes.
+  const basicsHandlers = useMemo(
+    () => ({
+      onTitleChange: handleTitleChange,
+      onSlugChange: (slug: string) => updateBasics("slug", slug),
+      onClientChange: (id: string | null) => updateBasics("clientId", id),
+      onSectorChange: (id: string | null) => updateBasics("sectorId", id),
+      onIndustryChange: (id: string | null) => updateBasics("industryId", id),
+      onKeyBusinessIdsChange: (ids: string[]) =>
+        updateBasics("keyBusinessIds", ids),
+      onProjectDateChange: (date: string | null) =>
+        updateBasics("projectDate", date),
+      onStatusChange: (status: "draft" | "published" | "archived") =>
+        updateBasics("status", status),
+    }),
+    [updateBasics, handleTitleChange],
+  );
+
+  const mediaHandlers = useMemo(
+    () => ({
+      onHeroChange: (url: string | null) => updateMedia("heroImageUrl", url),
+      onVideoEmbedChange: (url: string | null) =>
+        updateMedia("videoEmbedUrl", url),
+    }),
+    [updateMedia],
+  );
 
   return {
     form,
     taxonomies,
     saving: isPending,
     isNew,
-
-    updateBasics,
-    updateMedia,
     updateStory,
     updateTestimonial,
-
     toggleCategory,
     toggleService,
-
     addMetric,
     updateMetric,
     removeMetric,
-
     addGalleryImage,
     removeGalleryImage,
-
     addAttachment,
     removeAttachment,
-
-    handleTitleChange,
-
     save,
+    basicsHandlers,
+    mediaHandlers,
   };
 }

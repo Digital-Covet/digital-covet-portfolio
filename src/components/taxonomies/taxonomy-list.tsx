@@ -83,23 +83,24 @@ export function TaxonomyList({
   }
 
   async function handleDeleteClick(id: string) {
-    try {
-      const result = await deleteTaxonomy({ type, id });
-      if (!result.ok) {
-        toast.error(result.error.message);
-        return;
-      }
-      setDeleteId(id);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Failed to check delete");
-    }
+    setDeleteId(id);
   }
 
   async function handleDeleteConfirm() {
     if (!deleteId) return;
-    toast.success("Deleted");
-    router.refresh();
-    setDeleteId(null);
+    try {
+      const result = await deleteTaxonomy({ type, id: deleteId });
+      if (!result.ok) {
+        toast.error(result.error.message);
+        return;
+      }
+      toast.success("Deleted");
+      router.refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete");
+    } finally {
+      setDeleteId(null);
+    }
   }
 
   return (

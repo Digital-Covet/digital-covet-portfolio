@@ -1,27 +1,8 @@
 import { z } from "zod";
+import { urlSchema, videoEmbedUrlSchema } from "@/schemas/primitives/url";
+import { uuidSchema } from "@/schemas/primitives/uuid";
 
-const ALLOWED_VIDEO_EMBED_HOSTS = new Set([
-  "www.youtube.com",
-  "youtube-nocookie.com",
-  "www.youtube-nocookie.com",
-  "player.vimeo.com",
-]);
-
-function isAllowedEmbedHost(raw: string): boolean {
-  try {
-    return ALLOWED_VIDEO_EMBED_HOSTS.has(new URL(raw).hostname);
-  } catch {
-    return false;
-  }
-}
-
-export const videoEmbedUrlSchema = z
-  .url()
-  .refine(isAllowedEmbedHost, {
-    message: "Only YouTube and Vimeo embed URLs are accepted",
-  })
-  .nullable()
-  .optional();
+export { videoEmbedUrlSchema };
 
 export const metricSchema = z.object({
   label: z.string().min(1).max(100),
@@ -36,11 +17,11 @@ export const metricSchema = z.object({
 
 export const attachmentSchema = z.object({
   name: z.string().min(1).max(200),
-  url: z.url(),
+  url: urlSchema,
 });
 
 export const caseStudyInputSchema = z.object({
-  id: z.uuid().optional(),
+  id: uuidSchema.optional(),
   title: z.string().trim().min(1).max(200),
   slug: z
     .string()
@@ -51,11 +32,11 @@ export const caseStudyInputSchema = z.object({
       /^[a-z0-9-]+$/,
       "Slug may only contain lowercase letters, numbers, and hyphens",
     ),
-  clientId: z.uuid().nullable().optional(),
-  keyBusinessIds: z.array(z.uuid()).max(50).default([]),
+  clientId: uuidSchema.nullable().optional(),
+  keyBusinessIds: z.array(uuidSchema).max(50).default([]),
   projectDate: z.string().nullable().optional(),
-  heroImageUrl: z.url().nullable().optional(),
-  galleryUrls: z.array(z.url()).max(50).default([]),
+  heroImageUrl: urlSchema.nullable().optional(),
+  galleryUrls: z.array(urlSchema).max(50).default([]),
   videoEmbedUrl: videoEmbedUrlSchema,
   attachments: z.array(attachmentSchema).max(20).default([]),
   description: z.string().max(20000).nullable().optional(),
@@ -66,8 +47,8 @@ export const caseStudyInputSchema = z.object({
   testimonialAuthor: z.string().max(100).nullable().optional(),
   testimonialTitle: z.string().max(100).nullable().optional(),
   status: z.enum(["draft", "published", "archived"]),
-  categoryIds: z.array(z.uuid()).max(50).default([]),
-  serviceIds: z.array(z.uuid()).max(50).default([]),
+  categoryIds: z.array(uuidSchema).max(50).default([]),
+  serviceIds: z.array(uuidSchema).max(50).default([]),
   metrics: z.array(metricSchema).max(20).default([]),
 });
 

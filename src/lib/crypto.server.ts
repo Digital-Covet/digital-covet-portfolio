@@ -1,6 +1,10 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
-const SCRYPT_PARAMS: { N: number; r: number; p: number } = { N: 65536, r: 8, p: 1 };
+const SCRYPT_PARAMS: { N: number; r: number; p: number } = {
+  N: 65536,
+  r: 8,
+  p: 1,
+};
 const KEY_LENGTH = 64;
 const HASH_VERSION = "v1";
 

@@ -1,9 +1,12 @@
 import { prisma } from "@/db";
+import type { AuthUser, UserRole } from "@/types/auth.types";
 
-export interface AuthUser {
-  id: string;
-  role: string | null;
-  departmentId: string | null;
+export async function getDeptUserIds(deptId: string): Promise<string[]> {
+  const users = await prisma.user.findMany({
+    where: { departmentId: deptId },
+    select: { id: true },
+  });
+  return users.map((u) => u.id);
 }
 
 export type CreatedByScalarFilter =
@@ -13,22 +16,14 @@ export type CreatedByScalarFilter =
 
 export async function buildCreatedByFilter(
   authUser: AuthUser,
+  getDeptUserIds: (deptId: string) => Promise<string[]>,
 ): Promise<CreatedByScalarFilter> {
-  if (authUser.role === "superadmin") {
-    return undefined;
-  }
+  if (authUser.role === "superadmin") return undefined;
 
   if (authUser.role === "admin") {
-    if (!authUser.departmentId) {
-      return undefined;
-    }
-
-    const deptUsers = await prisma.user.findMany({
-      where: { departmentId: authUser.departmentId },
-      select: { id: true },
-    });
-
-    return { createdBy: { in: deptUsers.map((u) => u.id) } };
+    if (!authUser.departmentId) return undefined;
+    const userIds = await getDeptUserIds(authUser.departmentId);
+    return { createdBy: { in: userIds } };
   }
 
   return { createdBy: authUser.id };
@@ -50,7 +45,7 @@ export type UserListFilter =
   | undefined;
 
 export async function buildUserListFilter(
-  authUser: AuthUser,
+  authUser: { id: string; role: UserRole; departmentId: string | null },
 ): Promise<UserListFilter> {
   if (authUser.role === "superadmin") return undefined;
 

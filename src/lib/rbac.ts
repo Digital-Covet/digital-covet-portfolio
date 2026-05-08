@@ -44,9 +44,11 @@ export type UserListFilter =
   | { departmentId: string }
   | undefined;
 
-export async function buildUserListFilter(
-  authUser: { id: string; role: UserRole; departmentId: string | null },
-): Promise<UserListFilter> {
+export async function buildUserListFilter(authUser: {
+  id: string;
+  role: UserRole;
+  departmentId: string | null;
+}): Promise<UserListFilter> {
   if (authUser.role === "superadmin") return undefined;
 
   if (authUser.role === "admin") {

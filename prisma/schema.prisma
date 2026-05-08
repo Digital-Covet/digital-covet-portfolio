@@ -317,7 +317,7 @@ model ShareLink {
   filterServiceIds     String[]  @map("filter_service_ids")
   maxViews             Int?      @map("max_views")
   name                 String
-  passwordHash         String    @map("password_hash")
+  passwordHash         String?   @map("password_hash")
   recipientEmail       String?   @map("recipient_email")
   recipientName        String?   @map("recipient_name")
   revoked              Boolean   @default(false)

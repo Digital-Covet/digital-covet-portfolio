@@ -22,8 +22,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+
 import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { CaseStudyListItem } from "@/types/case-studies";
 
 type StatusFilter = "all" | "draft" | "published" | "archived";
@@ -129,10 +137,11 @@ export default function CaseStudiesListPage() {
               key={f}
               type="button"
               onClick={() => setFilter(f)}
-              className={`px-3 py-1 text-xs font-medium capitalize transition-colors ${filter === f
+              className={`px-3 py-1 text-xs font-medium capitalize transition-colors ${
+                filter === f
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted"
-                }`}
+              }`}
             >
               {f}
             </button>
@@ -141,69 +150,77 @@ export default function CaseStudiesListPage() {
       </div>
 
       {}
-      <div className="mt-6 grid gap-3">
-        {isLoading && studies.length === 0 ? (
-          <div className="py-12 text-center text-sm text-muted-foreground">
-            Loading…
-          </div>
-        ) : studies.length === 0 ? (
-          <div className="border border-dashed py-12 text-center text-sm text-muted-foreground">
-            No case studies found.
-          </div>
-        ) : (
-          studies.map((s) => (
-            <Card
-              key={s.id}
-              className="flex items-center justify-between gap-3 p-4"
-            >
-              <div className="flex min-w-0 items-center gap-4">
-                {s.heroImageUrl ? (
-                  <img
-                    src={s.heroImageUrl}
-                    alt=""
-                    className="h-14 w-20 object-cover"
-                  />
-                ) : (
-                  <div className="h-14 w-20  bg-muted" />
-                )}
-                <div className="min-w-0">
-                  <div className="truncate font-semibold">{s.title}</div>
-                  <div className="truncate text-xs text-muted-foreground">
-                    {s.client?.name ?? "No client"} ·{" "}
-                    {s.keyBusinesses.map((k) => k.name).join(", ") ||
-                      "No key business"}
+      <Table className="mt-6">
+        <TableHeader>
+          <TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead>Client</TableHead>
+            <TableHead>Key Businesses</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {isLoading && studies.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={5}
+                className="text-center py-12 text-muted-foreground"
+              >
+                Loading…
+              </TableCell>
+            </TableRow>
+          ) : studies.length === 0 ? (
+            <TableRow>
+              <TableCell
+                colSpan={5}
+                className="text-center py-12 text-muted-foreground"
+              >
+                No case studies found.
+              </TableCell>
+            </TableRow>
+          ) : (
+            studies.map((s) => (
+              <TableRow key={s.id}>
+                <TableCell className="font-medium">{s.title}</TableCell>
+                <TableCell>{s.client?.name ?? "No client"}</TableCell>
+                <TableCell>
+                  {s.keyBusinesses.map((k) => k.name).join(", ") ||
+                    "No key business"}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant={s.status === "published" ? "default" : "secondary"}
+                  >
+                    {s.status}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      render={
+                        <Link href={`/case-studies/${s.id}`}>
+                          <PencilSimpleIcon size={16} />
+                        </Link>
+                      }
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteId(s.id)}
+                      disabled={isDeleting}
+                    >
+                      <TrashIcon size={16} />
+                    </Button>
                   </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Badge
-                  variant={s.status === "published" ? "default" : "secondary"}
-                >
-                  {s.status}
-                </Badge>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  render={
-                    <Link href={`/case-studies/${s.id}`}>
-                      <PencilSimpleIcon size={16} />
-                    </Link>
-                  }
-                ></Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setDeleteId(s.id)}
-                  disabled={isDeleting}
-                >
-                  <TrashIcon size={16} />
-                </Button>
-              </div>
-            </Card>
-          ))
-        )}
-      </div>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
 
       {}
       {nextCursor && (

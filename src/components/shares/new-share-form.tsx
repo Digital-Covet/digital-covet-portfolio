@@ -13,6 +13,12 @@ import { toast } from "sonner";
 import { createShare } from "@/actions/share";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -65,37 +71,53 @@ function toggle(arr: string[], setArr: (a: string[]) => void, id: string) {
 /*  Sub-components                                                     */
 /* ------------------------------------------------------------------ */
 
-function Pills({
+function MultiSelect({
   label,
   items,
   selected,
-  onToggle,
+  onSelectionChange,
 }: {
   label: string;
   items: TaxonomyItem[];
   selected: string[];
-  onToggle: (id: string) => void;
+  onSelectionChange: (ids: string[]) => void;
 }) {
+  const selectedLabels = items
+    .filter((item) => selected.includes(item.id))
+    .map((item) => item.name);
+
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
       {items.length ? (
-        <div className="flex flex-wrap gap-2">
-          {items.map((it) => (
-            <button
-              key={it.id}
-              type="button"
-              onClick={() => onToggle(it.id)}
-              className={`rounded-full border px-3 py-1 text-xs ${
-                selected.includes(it.id)
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "hover:bg-muted"
-              }`}
-            >
-              {it.name}
-            </button>
-          ))}
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button variant="outline" className="w-full justify-start" />
+            }
+          >
+            {selectedLabels.length > 0
+              ? selectedLabels.join(", ")
+              : `Select ${label.toLowerCase()}...`}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56 max-h-80 overflow-y-auto">
+            {items.map((item) => (
+              <DropdownMenuCheckboxItem
+                key={item.id}
+                checked={selected.includes(item.id)}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    onSelectionChange([...selected, item.id]);
+                  } else {
+                    onSelectionChange(selected.filter((id) => id !== item.id));
+                  }
+                }}
+              >
+                {item.name}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : (
         <div className="text-xs text-muted-foreground">None defined.</div>
       )}
@@ -226,27 +248,31 @@ export function NewShareForm({ taxonomies, studies }: NewShareFormProps) {
                 </Button>
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>Password</Label>
-              <div className="flex gap-2">
-                <code className="flex-1 rounded border bg-muted/40 px-3 py-2 text-sm font-mono">
-                  {created.password}
-                </code>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    navigator.clipboard.writeText(created.password);
-                    toast.success("Copied");
-                  }}
-                >
-                  <CopyIcon size={16} />
-                </Button>
-              </div>
-            </div>
-            <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
-              Save the password now. For security, it cannot be shown again.
-            </div>
+            {created.password && (
+              <>
+                <div className="space-y-2">
+                  <Label>Password</Label>
+                  <div className="flex gap-2">
+                    <code className="flex-1 rounded border bg-muted/40 px-3 py-2 text-sm font-mono">
+                      {created.password}
+                    </code>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        navigator.clipboard.writeText(created.password);
+                        toast.success("Copied");
+                      }}
+                    >
+                      <CopyIcon size={16} />
+                    </Button>
+                  </div>
+                </div>
+                <div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200">
+                  Save the password now. For security, it cannot be shown again.
+                </div>
+              </>
+            )}
             <div className="flex gap-2">
               <Button onClick={() => router.push("/shares")}>
                 Back to shares
@@ -332,11 +358,12 @@ export function NewShareForm({ taxonomies, studies }: NewShareFormProps) {
             </div>
 
             <div className="space-y-2">
-              <Label>Password</Label>
+              <Label>Password (optional)</Label>
               <div className="flex gap-2">
                 <Input
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Leave empty for no password"
                 />
                 <Button
                   type="button"
@@ -376,67 +403,41 @@ export function NewShareForm({ taxonomies, studies }: NewShareFormProps) {
 
             {filterMode === "filter" ? (
               <div className="space-y-4">
-                <Pills
+                <MultiSelect
                   label="Sectors"
                   items={taxonomies.sectors}
                   selected={sectors}
-                  onToggle={(id) => toggle(sectors, setSectors, id)}
+                  onSelectionChange={setSectors}
                 />
-                <Pills
+                <MultiSelect
                   label="Industries"
                   items={taxonomies.industries}
                   selected={industries}
-                  onToggle={(id) => toggle(industries, setIndustries, id)}
+                  onSelectionChange={setIndustries}
                 />
-                <Pills
+                <MultiSelect
                   label="Key Businesses"
                   items={taxonomies.keyBusinesses}
                   selected={keyBusinesses}
-                  onToggle={(id) => {
-                    const isSelected = keyBusinesses.includes(id);
-                    if (isSelected) {
-                      toggle(keyBusinesses, setKeyBusinesses, id);
-                    } else {
-                      const kb = taxonomies.keyBusinesses.find(
-                        (k) => k.id === id,
-                      );
-                      if (kb?.industryId) {
-                        setKeyBusinesses([...keyBusinesses, id]);
-                        if (!industries.includes(kb.industryId)) {
-                          setIndustries([...industries, kb.industryId]);
-                          const ind = taxonomies.industries.find(
-                            (i) => i.id === kb.industryId,
-                          );
-                          if (
-                            ind?.sectorId &&
-                            !sectors.includes(ind.sectorId)
-                          ) {
-                            setSectors([...sectors, ind.sectorId]);
-                          }
-                        }
-                      } else {
-                        toggle(keyBusinesses, setKeyBusinesses, id);
-                      }
-                    }
-                  }}
+                  onSelectionChange={setKeyBusinesses}
                 />
-                <Pills
+                <MultiSelect
                   label="Work categories"
                   items={taxonomies.categories}
                   selected={categories}
-                  onToggle={(id) => toggle(categories, setCategories, id)}
+                  onSelectionChange={setCategories}
                 />
-                <Pills
+                <MultiSelect
                   label="Services"
                   items={taxonomies.services}
                   selected={services}
-                  onToggle={(id) => toggle(services, setServices, id)}
+                  onSelectionChange={setServices}
                 />
-                <Pills
+                <MultiSelect
                   label="Clients"
                   items={taxonomies.clients}
                   selected={clients}
-                  onToggle={(id) => toggle(clients, setClients, id)}
+                  onSelectionChange={setClients}
                 />
                 <p className="text-xs text-muted-foreground">
                   Empty = no filter. Multiple values within a section act as OR.

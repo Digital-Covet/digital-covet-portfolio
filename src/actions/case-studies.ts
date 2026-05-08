@@ -121,11 +121,11 @@ export async function listCaseStudies(
         ...(opts.status ? { status: opts.status } : {}),
         ...(opts.search
           ? {
-            title: {
-              contains: opts.search,
-              mode: "insensitive" as const,
-            },
-          }
+              title: {
+                contains: opts.search,
+                mode: "insensitive" as const,
+              },
+            }
           : {}),
       },
       orderBy: { createdAt: "desc" },

@@ -166,8 +166,9 @@ export function TaxonomyList({
           {items.map((i) => (
             <div
               key={i.id}
-              className={`flex items-center justify-between rounded text-sm hover:bg-muted ${selectedId === i.id ? "bg-muted font-medium" : ""
-                }`}
+              className={`flex items-center justify-between rounded text-sm hover:bg-muted ${
+                selectedId === i.id ? "bg-muted font-medium" : ""
+              }`}
             >
               <Button
                 className="flex-1 text-left bg-muted text-black"

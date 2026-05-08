@@ -93,7 +93,10 @@ export type DbCaseStudyWithRelations = Prisma.CaseStudyGetPayload<{
 export type CaseStudyResponse = {
   study: Omit<
     DbCaseStudyWithRelations,
-    "caseStudyCategories" | "caseStudyServices" | "caseStudyMetrics" | "caseStudyBusinessModels"
+    | "caseStudyCategories"
+    | "caseStudyServices"
+    | "caseStudyMetrics"
+    | "caseStudyBusinessModels"
   >;
   categoryIds: string[];
   serviceIds: string[];

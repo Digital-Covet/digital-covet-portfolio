@@ -177,7 +177,7 @@ export async function getDashboardViewStats(): Promise<
 
 const createShareSchema = z.object({
   name: z.string().trim().min(1, "Name is required"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z.string().optional(),
   recipientName: z.string().trim().max(200).nullable().optional(),
   recipientEmail: z.email().nullable().optional(),
   expiresAt: z.string().nullable().optional(),
@@ -200,7 +200,7 @@ export async function createShare(
     const data = createShareSchema.parse(input);
     const token = crypto.randomUUID();
 
-    const passwordHash = hashPassword(data.password);
+    const passwordHash = data.password ? hashPassword(data.password) : null;
 
     const shareLink = await prisma.shareLink.create({
       data: {

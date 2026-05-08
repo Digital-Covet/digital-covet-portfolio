@@ -48,7 +48,7 @@ export type SerializedShare = {
   filterServiceIds: string[];
   maxViews: number | null;
   name: string;
-  passwordHash: string;
+  passwordHash: string | null;
   recipientEmail: string | null;
   recipientName: string | null;
   revoked: boolean;

@@ -19,7 +19,7 @@ const SHARE_UNLOCKED_PREFIX = "share_unlocked_";
 const tokenSchema = z.string().min(10).max(200);
 const unlockSchema = z.object({
   token: z.string().min(10).max(200),
-  password: z.string().min(1).max(200),
+  password: z.string().max(200).optional(),
 });
 
 // ---------------------------------------------------------------------------
@@ -158,8 +158,13 @@ export async function unlockShare(token: string, password: string) {
   if (!share) throw new Error("Share not found");
   assertShareAccessible(share);
 
-  const ok = await verifyPassword(validated.data.password, share.passwordHash);
-  if (!ok) throw new Error("Incorrect password");
+  if (share.passwordHash === null) {
+  } else if (!validated.data.password) {
+    throw new Error("Password required");
+  } else {
+    const ok = await verifyPassword(validated.data.password, share.passwordHash);
+    if (!ok) throw new Error("Incorrect password");
+  }
 
   const cookieStore = await cookies();
   cookieStore.set(getUnlockCookieName(share.id), "1", {

@@ -3,6 +3,7 @@ import { PlusIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 import { FileUploader, ImagePreview } from "@/components/file-uploader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,6 +23,23 @@ import type {
 } from "@/types/case-studies";
 import { slugify } from "@/utils/case-studies";
 import { Field, TagSelector } from "./shared";
+
+const YOUTUBE_VIDEO_ID_REGEX = /^[a-zA-Z0-9_-]{11}$/;
+
+function isValidVideoEmbedUrl(raw: string): boolean {
+  if (!raw) return true;
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.replace(/^www\./, "");
+    if (host === "youtube.com" || host === "youtube-nocookie.com") {
+      const match = url.pathname.match(/^\/embed\/([a-zA-Z0-9_-]+)$/);
+      return match !== null && YOUTUBE_VIDEO_ID_REGEX.test(match[1]);
+    }
+    return false;
+  } catch {
+    return false;
+  }
+}
 
 type BasicsProps = {
   title: string;
@@ -104,7 +122,11 @@ export function BasicsSection({
               onValueChange={(v) => onClientChange(v === "none" ? null : v)}
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>
+                  {clientId && clientId !== "none"
+                    ? clients.find((c) => c.id === clientId)?.name
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">— None —</SelectItem>
@@ -180,28 +202,28 @@ export function BasicsSection({
             <div className="space-y-2 border p-3">
               {industryId
                 ? keyBusinesses
-                  .filter((k) => k.industryId === industryId)
-                  .map((k) => (
-                    <label
-                      key={k.id}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={keyBusinessIds.includes(k.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            onKeyBusinessIdsChange([...keyBusinessIds, k.id]);
-                          } else {
-                            onKeyBusinessIdsChange(
-                              keyBusinessIds.filter((id) => id !== k.id),
-                            );
-                          }
-                        }}
-                      />
-                      {k.name}
-                    </label>
-                  ))
+                    .filter((k) => k.industryId === industryId)
+                    .map((k) => (
+                      <label
+                        key={k.id}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={keyBusinessIds.includes(k.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              onKeyBusinessIdsChange([...keyBusinessIds, k.id]);
+                            } else {
+                              onKeyBusinessIdsChange(
+                                keyBusinessIds.filter((id) => id !== k.id),
+                              );
+                            }
+                          }}
+                        />
+                        {k.name}
+                      </label>
+                    ))
                 : null}
               {!industryId && (
                 <p className="text-xs text-muted-foreground">
@@ -220,7 +242,11 @@ export function BasicsSection({
               }
             >
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>
+                  {businessModelId && businessModelId !== "none"
+                    ? businessModels.find((m) => m.id === businessModelId)?.name
+                    : undefined}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="none">— None —</SelectItem>
@@ -235,19 +261,22 @@ export function BasicsSection({
 
           <div className="space-y-2">
             <Label>Project date</Label>
-            <Input
-              value={projectDate ?? ""}
-              onChange={(e) => onProjectDateChange(e.target.value || null)}
-            />
+            <DatePicker value={projectDate} onChange={onProjectDateChange} />
           </div>
 
           <div className="space-y-2">
-            <Label>Video embed URL (YouTube / Vimeo)</Label>
+            <Label>Video embed URL (YouTube)</Label>
             <Input
               value={videoEmbedUrl ?? ""}
               placeholder="https://www.youtube.com/embed/…"
               onChange={(e) => onVideoEmbedChange(e.target.value || null)}
             />
+            {videoEmbedUrl && !isValidVideoEmbedUrl(videoEmbedUrl) && (
+              <p className="text-xs text-destructive">
+                Enter a valid YouTube embed URL (e.g.
+                https://www.youtube.com/embed/xxx)
+              </p>
+            )}
           </div>
         </div>
       </CardContent>

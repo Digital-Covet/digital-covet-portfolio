@@ -1,6 +1,18 @@
 import { z } from "zod";
 
-export const urlSchema = z.url();
+const relativeOrAbsoluteUrl = z.string().refine(
+  (val) => {
+    try {
+      new URL(val);
+      return true;
+    } catch {
+      return val.startsWith("/");
+    }
+  },
+  { message: "Must be a valid URL or a path starting with /" },
+);
+
+export const urlSchema = relativeOrAbsoluteUrl;
 
 const ALLOWED_VIDEO_EMBED_HOSTS = new Set([
   "www.youtube.com",

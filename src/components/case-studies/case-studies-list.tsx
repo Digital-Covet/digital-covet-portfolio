@@ -136,7 +136,7 @@ export function CaseStudiesList({ initialData }: CaseStudiesListProps) {
           />
         </div>
 
-        <div className="flex gap-1 rounded-md border p-1">
+        <div className="flex gap-1 border p-1">
           {(["all", "published", "draft", "archived"] as const).map((f) => (
             <Button
               key={f}
@@ -157,7 +157,7 @@ export function CaseStudiesList({ initialData }: CaseStudiesListProps) {
             Loading…
           </div>
         ) : studies.length === 0 ? (
-          <div className="rounded-md border border-dashed py-12 text-center text-sm text-muted-foreground">
+          <div className="border border-dashed py-12 text-center text-sm text-muted-foreground">
             No case studies found.
           </div>
         ) : (
@@ -171,10 +171,10 @@ export function CaseStudiesList({ initialData }: CaseStudiesListProps) {
                   <img
                     src={s.heroImageUrl}
                     alt=""
-                    className="h-14 w-20 rounded object-cover"
+                    className="h-14 w-20  object-cover"
                   />
                 ) : (
-                  <div className="h-14 w-20 rounded bg-muted" />
+                  <div className="h-14 w-20  bg-muted" />
                 )}
                 <div className="min-w-0">
                   <div className="truncate font-semibold">{s.title}</div>

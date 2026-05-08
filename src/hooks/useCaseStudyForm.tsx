@@ -221,6 +221,8 @@ export function useCaseStudyForm({
       onIndustryChange: (id: string | null) => updateBasics("industryId", id),
       onKeyBusinessIdsChange: (ids: string[]) =>
         updateBasics("keyBusinessIds", ids),
+      onBusinessModelIdChange: (id: string | null) =>
+        updateBasics("businessModelId", id),
       onProjectDateChange: (date: string | null) =>
         updateBasics("projectDate", date),
       onStatusChange: (status: "draft" | "published" | "archived") =>

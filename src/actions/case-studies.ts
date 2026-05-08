@@ -80,6 +80,7 @@ export async function upsertCaseStudy(
         categoryIds: data.categoryIds,
         serviceIds: data.serviceIds,
         keyBusinessIds: data.keyBusinessIds,
+        businessModelId: data.businessModelId ?? null,
         metrics: data.metrics,
       });
 
@@ -190,6 +191,9 @@ export async function getCaseStudy(input: {
             },
           },
         },
+        caseStudyBusinessModels: {
+          select: { businessModelId: true },
+        },
         client: true,
       },
     });
@@ -200,12 +204,15 @@ export async function getCaseStudy(input: {
       caseStudyCategories,
       caseStudyServices,
       caseStudyMetrics,
+      caseStudyBusinessModels,
       ...studyData
     } = study;
+    const businessModelId = caseStudyBusinessModels[0]?.businessModelId ?? null;
     return ok({
       study: studyData,
       categoryIds: caseStudyCategories.map((c) => c.categoryId),
       serviceIds: caseStudyServices.map((s) => s.serviceId),
+      businessModelId,
       metrics: caseStudyMetrics.map(({ label, value, unit }) => ({
         label,
         value,

@@ -30,18 +30,21 @@ type BasicsProps = {
   sectorId: string | null;
   industryId: string | null;
   keyBusinessIds: string[];
+  businessModelId: string | null;
   projectDate: string | null;
   videoEmbedUrl: string | null;
   clients: Client[];
   sectors: Taxonomy[];
   industries: IndustryWithSector[];
   keyBusinesses: KeyBusinessWithIndustry[];
+  businessModels: Taxonomy[];
   onTitleChange: (title: string) => void;
   onSlugChange: (slug: string) => void;
   onClientChange: (id: string | null) => void;
   onSectorChange: (id: string | null) => void;
   onIndustryChange: (id: string | null) => void;
   onKeyBusinessIdsChange: (ids: string[]) => void;
+  onBusinessModelIdChange: (id: string | null) => void;
   onProjectDateChange: (date: string | null) => void;
   onVideoEmbedChange: (url: string | null) => void;
 };
@@ -53,18 +56,21 @@ export function BasicsSection({
   sectorId,
   industryId,
   keyBusinessIds,
+  businessModelId,
   projectDate,
   videoEmbedUrl,
   clients,
   sectors,
   industries,
   keyBusinesses,
+  businessModels,
   onTitleChange,
   onSlugChange,
   onClientChange,
   onSectorChange,
   onIndustryChange,
   onKeyBusinessIdsChange,
+  onBusinessModelIdChange,
   onProjectDateChange,
   onVideoEmbedChange,
 }: BasicsProps) {
@@ -171,32 +177,31 @@ export function BasicsSection({
 
           <div className="space-y-2">
             <Label>Key Business</Label>
-            <div className="space-y-2 rounded-md border p-3">
+            <div className="space-y-2 border p-3">
               {industryId
                 ? keyBusinesses
-                    .filter((k) => k.industryId === industryId)
-                    .map((k) => (
-                      <label
-                        key={k.id}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={keyBusinessIds.includes(k.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              onKeyBusinessIdsChange([...keyBusinessIds, k.id]);
-                            } else {
-                              onKeyBusinessIdsChange(
-                                keyBusinessIds.filter((id) => id !== k.id),
-                              );
-                            }
-                          }}
-                          className="rounded"
-                        />
-                        {k.name}
-                      </label>
-                    ))
+                  .filter((k) => k.industryId === industryId)
+                  .map((k) => (
+                    <label
+                      key={k.id}
+                      className="flex items-center gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={keyBusinessIds.includes(k.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            onKeyBusinessIdsChange([...keyBusinessIds, k.id]);
+                          } else {
+                            onKeyBusinessIdsChange(
+                              keyBusinessIds.filter((id) => id !== k.id),
+                            );
+                          }
+                        }}
+                      />
+                      {k.name}
+                    </label>
+                  ))
                 : null}
               {!industryId && (
                 <p className="text-xs text-muted-foreground">
@@ -207,9 +212,30 @@ export function BasicsSection({
           </div>
 
           <div className="space-y-2">
+            <Label>Business Model</Label>
+            <Select
+              value={businessModelId ?? "none"}
+              onValueChange={(v) =>
+                onBusinessModelIdChange(v === "none" ? null : v)
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">— None —</SelectItem>
+                {businessModels.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label>Project date</Label>
             <Input
-              type="date"
               value={projectDate ?? ""}
               onChange={(e) => onProjectDateChange(e.target.value || null)}
             />
@@ -339,7 +365,7 @@ export function MediaSection({
             {attachments.map((a, i) => (
               <div
                 key={`${a.url}-${i}`}
-                className="flex items-center justify-between rounded-md border bg-muted/30 px-3 py-2 text-sm"
+                className="flex items-center justify-between border bg-muted/30 px-3 py-2 text-sm"
               >
                 <a
                   href={a.url}

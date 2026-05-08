@@ -4,6 +4,7 @@ type RelationSyncInput = {
   categoryIds: string[];
   serviceIds: string[];
   keyBusinessIds: string[];
+  businessModelId: string | null;
   metrics: { label: string; value: string; unit: string | null }[];
 };
 
@@ -18,6 +19,7 @@ export async function syncCaseStudyRelations(
     tx.caseStudyService.deleteMany({ where: { caseStudyId } }),
     tx.caseStudyMetric.deleteMany({ where: { caseStudyId } }),
     tx.caseStudyKeyBusiness.deleteMany({ where: { caseStudyId } }),
+    tx.caseStudyBusinessModel.deleteMany({ where: { caseStudyId } }),
   ]);
 
   // Phase 2: Create new relations in parallel
@@ -55,6 +57,17 @@ export async function syncCaseStudyRelations(
           keyBusinessId,
         })),
         skipDuplicates: true,
+      }),
+    );
+  }
+
+  if (input.businessModelId) {
+    creates.push(
+      tx.caseStudyBusinessModel.create({
+        data: {
+          caseStudyId,
+          businessModelId: input.businessModelId,
+        },
       }),
     );
   }

@@ -37,6 +37,7 @@ export type Basics = {
   sectorId: string | null;
   industryId: string | null;
   keyBusinessIds: string[];
+  businessModelId: string | null;
   projectDate: string | null;
   status: "draft" | "published" | "archived";
 };
@@ -92,10 +93,11 @@ export type DbCaseStudyWithRelations = Prisma.CaseStudyGetPayload<{
 export type CaseStudyResponse = {
   study: Omit<
     DbCaseStudyWithRelations,
-    "caseStudyCategories" | "caseStudyServices" | "caseStudyMetrics"
+    "caseStudyCategories" | "caseStudyServices" | "caseStudyMetrics" | "caseStudyBusinessModels"
   >;
   categoryIds: string[];
   serviceIds: string[];
+  businessModelId: string | null;
   metrics: Metric[];
 };
 

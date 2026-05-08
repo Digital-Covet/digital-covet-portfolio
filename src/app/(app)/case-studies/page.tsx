@@ -123,13 +123,13 @@ export default function CaseStudiesListPage() {
           />
         </div>
 
-        <div className="flex gap-1 rounded-md border p-1">
+        <div className="flex gap-1 border p-1">
           {(["all", "published", "draft", "archived"] as const).map((f) => (
             <button
               key={f}
               type="button"
               onClick={() => setFilter(f)}
-              className={`rounded px-3 py-1 text-xs font-medium capitalize transition-colors ${filter === f
+              className={`px-3 py-1 text-xs font-medium capitalize transition-colors ${filter === f
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted"
                 }`}
@@ -147,7 +147,7 @@ export default function CaseStudiesListPage() {
             Loading…
           </div>
         ) : studies.length === 0 ? (
-          <div className="rounded-md border border-dashed py-12 text-center text-sm text-muted-foreground">
+          <div className="border border-dashed py-12 text-center text-sm text-muted-foreground">
             No case studies found.
           </div>
         ) : (
@@ -161,10 +161,10 @@ export default function CaseStudiesListPage() {
                   <img
                     src={s.heroImageUrl}
                     alt=""
-                    className="h-14 w-20 rounded object-cover"
+                    className="h-14 w-20 object-cover"
                   />
                 ) : (
-                  <div className="h-14 w-20 rounded bg-muted" />
+                  <div className="h-14 w-20  bg-muted" />
                 )}
                 <div className="min-w-0">
                   <div className="truncate font-semibold">{s.title}</div>

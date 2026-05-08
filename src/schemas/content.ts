@@ -34,6 +34,7 @@ export const caseStudyInputSchema = z.object({
     ),
   clientId: uuidSchema.nullable().optional(),
   keyBusinessIds: z.array(uuidSchema).max(50).default([]),
+  businessModelId: uuidSchema.nullable().optional(),
   projectDate: z.string().nullable().optional(),
   heroImageUrl: urlSchema.nullable().optional(),
   galleryUrls: z.array(urlSchema).max(50).default([]),

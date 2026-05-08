@@ -11,7 +11,7 @@ import {
 } from "@/lib/action-result";
 import { requireRole } from "@/lib/auth.server";
 import { hashPassword } from "@/lib/crypto.server";
-import { buildCreatedByFilter } from "@/lib/rbac";
+import { buildCreatedByFilter, getDeptUserIds } from "@/lib/rbac";
 
 const shareLinkSelect = {
   id: true,
@@ -71,7 +71,7 @@ export async function listShares(
   return runAction(async () => {
     const authUser = await requireRole("employee");
     const opts = listSharesInputSchema.parse(input);
-    const rbacFilter = await buildCreatedByFilter(authUser);
+    const rbacFilter = await buildCreatedByFilter(authUser, getDeptUserIds);
 
     const rows = await prisma.shareLink.findMany({
       where: {

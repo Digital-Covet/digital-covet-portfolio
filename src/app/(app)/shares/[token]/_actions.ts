@@ -35,6 +35,7 @@ export type ShareInfo =
       name: string;
       status: ShareStatus;
       unlocked: boolean;
+      requiresPassword: boolean;
     };
 
 export type SerializedStudy = {
@@ -136,15 +137,17 @@ export async function getShareInfo(token: string): Promise<ShareInfo> {
       maxViews: true,
       viewCount: true,
       revoked: true,
+      passwordHash: true,
     },
   });
 
   if (!share) return { exists: false };
 
   const status = computeShareStatus(share);
-  const unlocked = await isShareUnlocked(share.id);
+  const requiresPassword = share.passwordHash !== null;
+  const unlocked = !requiresPassword || (await isShareUnlocked(share.id));
 
-  return { exists: true, name: share.name, status, unlocked };
+  return { exists: true, name: share.name, status, unlocked, requiresPassword };
 }
 
 export async function unlockShare(token: string, password: string) {
@@ -210,8 +213,10 @@ export async function getShareContent(token: string): Promise<ShareContent> {
   if (!share) throw new Error("Not found");
   if (share.revoked) throw new Error("Revoked");
 
-  const unlocked = await isShareUnlocked(share.id);
-  if (!unlocked) throw new Error("Not unlocked");
+  if (share.passwordHash !== null) {
+    const unlocked = await isShareUnlocked(share.id);
+    if (!unlocked) throw new Error("Not unlocked");
+  }
 
   // Build Prisma where conditions
   const where: Prisma.CaseStudyWhereInput = { status: "published" };

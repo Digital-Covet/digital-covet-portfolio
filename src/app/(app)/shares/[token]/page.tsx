@@ -15,13 +15,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  getShareContent,
+  getShareInfo,
+  unlockShare,
+} from "./_actions";
 import type {
   SerializedMetric,
   SerializedStudy,
   ShareContent,
   ShareInfo,
 } from "./_actions";
-import { getShareContent, getShareInfo, unlockShare } from "./_actions";
 
 interface Attachment {
   name: string;
@@ -109,7 +113,7 @@ export default function SharePage({
     );
   }
 
-  if (!info.unlocked) {
+  if (info.requiresPassword && !info.unlocked) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted/30 px-4">
         <Card className="w-full max-w-md p-8">

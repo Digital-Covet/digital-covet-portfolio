@@ -293,13 +293,14 @@ model CaseStudyKeyBusiness {
 }
 
 model CaseStudyBusinessModel {
-  caseStudyId    String @map("case_study_id")
+  id             String   @id @default(uuid())
+  caseStudyId    String   @map("case_study_id")
   businessModelId String @map("business_model_id")
 
   caseStudy    CaseStudy    @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
   businessModel BusinessModel @relation(fields: [businessModelId], references: [id], onDelete: Cascade)
 
-  @@id([caseStudyId, businessModelId])
+  @@unique([caseStudyId, businessModelId])
   @@index([caseStudyId])
   @@map("case_study_business_models")
 }

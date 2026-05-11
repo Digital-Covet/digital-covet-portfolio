@@ -12,17 +12,9 @@ interface InviteSuccessData {
   inviteUrl: string;
 }
 
-export async function testInviteEmployee(
+export async function testInviteAdmin(
   workEmail: string,
 ): Promise<Result<InviteSuccessData>> {
-  if (process.env.NODE_ENV === "production") {
-    const reqHeaders = await headers();
-    const session = await auth.api.getSession({ headers: reqHeaders });
-    if (!session?.user) {
-      return err("Unauthorized.");
-    }
-  }
-
   if (!workEmail || !workEmail.endsWith(WORK_EMAIL_DOMAIN)) {
     return err(`A valid work email (${WORK_EMAIL_DOMAIN}) is required.`);
   }
@@ -49,7 +41,7 @@ export async function testInviteEmployee(
       const result = await resetInvitation(
         workEmail,
         existingUser.id,
-        existingUser.role || ROLES.EMPLOYEE,
+        ROLES.ADMIN,
       );
       fireInviteEmail(workEmail, workEmail, result.inviteUrl);
       return ok({ inviteUrl: result.inviteUrl });
@@ -61,85 +53,13 @@ export async function testInviteEmployee(
       );
     }
 
-    const result = await createUserAndInvite(workEmail, ROLES.EMPLOYEE);
+    const result = await createUserAndInvite(workEmail, ROLES.ADMIN);
     fireInviteEmail(workEmail, workEmail, result.inviteUrl);
     return ok({ inviteUrl: result.inviteUrl });
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "An unexpected error occurred.";
-    console.error("[testInviteEmployee]", message);
-    return err(message);
-  }
-}
-
-export async function inviteEmployee(
-  workEmail: string,
-): Promise<Result<InviteSuccessData>> {
-  if (!workEmail || !workEmail.endsWith(WORK_EMAIL_DOMAIN)) {
-    return err(`A valid work email (${WORK_EMAIL_DOMAIN}) is required.`);
-  }
-
-  try {
-    const reqHeaders = await headers();
-    const session = await auth.api.getSession({ headers: reqHeaders });
-    if (
-      !session ||
-      (session.user.role !== ROLES.ADMIN &&
-        session.user.role !== ROLES.SUPERADMIN)
-    ) {
-      return err("Unauthorized. Admin access is required to invite employees.");
-    }
-
-    const [existingUser, invitation] = await Promise.all([
-      prisma.user.findUnique({ where: { email: workEmail } }),
-      prisma.invitation.findFirst({
-        where: {
-          email: workEmail,
-          usedAt: null,
-          expiresAt: { gt: new Date() },
-        },
-      }),
-    ]);
-
-    if (existingUser?.passwordChanged) {
-      return err(
-        "A user with this work email already exists and has activated their account.",
-      );
-    }
-
-    if (existingUser && !existingUser.passwordChanged) {
-      if (invitation) {
-        return err(
-          "An invitation already exists for this user. Use the resend function.",
-        );
-      }
-      const result = await resetInvitation(
-        workEmail,
-        existingUser.id,
-        ROLES.EMPLOYEE,
-        session.user.id,
-      );
-      fireInviteEmail(workEmail, workEmail, result.inviteUrl);
-      return ok({ inviteUrl: result.inviteUrl });
-    }
-
-    if (invitation) {
-      return err(
-        "An invitation already exists for this work email. Use the resend function.",
-      );
-    }
-
-    const result = await createUserAndInvite(
-      workEmail,
-      ROLES.EMPLOYEE,
-      session.user.id,
-    );
-    fireInviteEmail(workEmail, workEmail, result.inviteUrl);
-    return ok({ inviteUrl: result.inviteUrl });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "An unexpected error occurred.";
-    console.error("[inviteEmployee]", message);
+    console.error("[testInviteAdmin]", message);
     return err(message);
   }
 }

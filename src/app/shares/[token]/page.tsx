@@ -15,17 +15,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  getShareContent,
-  getShareInfo,
-  unlockShare,
-} from "./_actions";
 import type {
   SerializedMetric,
   SerializedStudy,
   ShareContent,
   ShareInfo,
 } from "./_actions";
+import { getShareContent, getShareInfo, unlockShare } from "./_actions";
 
 interface Attachment {
   name: string;
@@ -49,14 +45,14 @@ export default function SharePage({
   useEffect(() => {
     getShareInfo(token)
       .then(setInfo)
-      .catch(() => {});
+      .catch(() => { });
   }, [token]);
 
   useEffect(() => {
     if (info && info.exists && info.unlocked && info.status === "ok") {
       getShareContent(token)
         .then(setContent)
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [info, token]);
 
@@ -428,6 +424,6 @@ function toEmbed(url: string): string {
     if (u.hostname.includes("vimeo.com")) {
       return `https://player.vimeo.com/video${u.pathname}`;
     }
-  } catch {}
+  } catch { }
   return url;
 }

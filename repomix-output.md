@@ -1,362 +1,377 @@
-This file is a merged representation of a subset of the codebase, containing specifically included files, combined into a single document by Repomix.
-The content has been processed where comments have been removed, empty lines have been removed.
-
-# File Summary
-
-## Purpose
-This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
-It is designed to be easily consumable by AI systems for analysis, code review,
-or other automated processes.
-
-## File Format
-The content is organized as follows:
-1. This summary section
-2. Repository information
-3. Directory structure
-4. Repository files (if enabled)
-5. Multiple file entries, each consisting of:
-  a. A header with the file path (## File: path/to/file)
-  b. The full contents of the file in a code block
-
-## Usage Guidelines
-- This file should be treated as read-only. Any changes should be made to the
-  original repository files, not this packed version.
-- When processing this file, use the file path to distinguish
-  between different files in the repository.
-- Be aware that this file may contain sensitive information. Handle it with
-  the same level of security as you would the original repository.
-
-## Notes
-- Some files may have been excluded based on .gitignore rules and Repomix's configuration
-- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
-- Only files matching these patterns are included: **/setup*, **/proxy*, **/auth.ts
-- Files matching patterns in .gitignore are excluded
-- Files matching default ignore patterns are excluded
-- Code comments have been removed from supported file types
-- Empty lines have been removed from all files
-- Files are sorted by Git change count (files with more changes are at the bottom)
-
 # Directory Structure
 ```
-src/
-  app/
-    auth/
-      setup-2fa/
-        setup-2fa-content.tsx
-  components/
-    setup-password-form.tsx
-  lib/
-    auth.ts
-  proxy.ts
+prisma/schema.prisma
 ```
 
 # Files
 
-## File: src/app/auth/setup-2fa/setup-2fa-content.tsx
-```typescript
-"use client";
-import { useRouter } from "next/navigation";
-import { Suspense } from "react";
-import { toast } from "sonner";
-import { TwoFactorSetup } from "@/components/two-factor-setup";
-function Setup2FAContent() {
-  const router = useRouter();
-  const handleComplete = () => {
-    toast.success("Two-factor authentication enabled!");
-    router.push("/dashboard");
-  };
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md">
-        <TwoFactorSetup onComplete={handleComplete} />
-      </div>
-    </div>
-  );
+## File: prisma/schema.prisma
+```prisma
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
 }
-export function Setup2FAContentWithSuspense() {
-  return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-screen items-center justify-center">
-          <p className="text-sm text-muted-foreground">Loading setup...</p>
-        </div>
-      }
-    >
-      <Setup2FAContent />
-    </Suspense>
-  );
-}
-```
 
-## File: src/proxy.ts
-```typescript
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
-import { ROUTES } from "@/lib/constants";
-const publicRoutes = [
-  ROUTES.LOGIN,
-  "/auth/forgot-password",
-  "/auth/reset-password",
-  ROUTES.SETUP_PASSWORD,
-  "/auth/verify-2fa",
-  ROUTES.SETUP_2FA,
-  "/auth/test-invite",
-] as const;
-const TWO_FACTOR_PENDING_COOKIE = "better-auth.two_factor_session";
-const TWO_FACTOR_PENDING_COOKIE_SECURE =
-  "__Secure-better-auth.two_factor_session";
-const isPublicRoute = (path: string): boolean =>
-  publicRoutes.some((route) => path.startsWith(route));
-const getVerifiedSessionCookie = (request: NextRequest): string | undefined =>
-  request.cookies.get("better-auth.session_token")?.value ??
-  request.cookies.get("__Secure-better-auth.session_token")?.value;
-const getPending2FACookie = (request: NextRequest): string | undefined =>
-  request.cookies.get(TWO_FACTOR_PENDING_COOKIE)?.value ??
-  request.cookies.get(TWO_FACTOR_PENDING_COOKIE_SECURE)?.value;
-export async function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  if (
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/api") ||
-    /\.(.+)$/.test(pathname)
-  ) {
-    return NextResponse.next();
-  }
-  const verifiedCookie = getVerifiedSessionCookie(request);
-  const pendingCookie = getPending2FACookie(request);
-  if (pendingCookie && !verifiedCookie) {
-    if (pathname === "/auth/verify-2fa") {
-      return NextResponse.next();
-    }
-    return NextResponse.redirect(new URL("/auth/verify-2fa", request.url));
-  }
-  if (!verifiedCookie) {
-    if (!isPublicRoute(pathname)) {
-      return NextResponse.redirect(new URL(ROUTES.LOGIN, request.url));
-    }
-    return NextResponse.next();
-  }
-  try {
-    const session = await auth.api.getSession({
-      headers: new Headers({ cookie: request.headers.get("cookie") ?? "" }),
-    });
-    if (!session?.user) {
-      if (!isPublicRoute(pathname)) {
-        return NextResponse.redirect(new URL(ROUTES.LOGIN, request.url));
-      }
-      return NextResponse.next();
-    }
-    const { user } = session;
-    if (user.passwordChanged === false && pathname !== ROUTES.SETUP_PASSWORD) {
-      return NextResponse.redirect(new URL(ROUTES.SETUP_PASSWORD, request.url));
-    }
-    if (
-      user.twoFactorEnabled === false &&
-      pathname !== ROUTES.SETUP_2FA &&
-      !isPublicRoute(pathname)
-    ) {
-      return NextResponse.redirect(new URL(ROUTES.SETUP_2FA, request.url));
-    }
-    if (isPublicRoute(pathname)) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-  } catch (error) {
-    console.error("[proxy] Session validation error:", error);
-    if (!isPublicRoute(pathname)) {
-      return NextResponse.redirect(new URL(ROUTES.LOGIN, request.url));
-    }
-  }
-  return NextResponse.next();
+datasource db {
+  provider = "postgresql"
 }
-export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
-};
-```
 
-## File: src/components/setup-password-form.tsx
-```typescript
-"use client";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { toast } from "sonner";
-import { setupPassword } from "@/actions/invite";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { authClient } from "@/lib/auth-client";
-interface SetupPasswordFormProps {
-  email: string;
-  token: string;
+enum UserRole {
+  employee
+  admin
+  superadmin
 }
-export function SetupPasswordForm({ email, token }: SetupPasswordFormProps) {
-  const router = useRouter();
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (newPassword.length < 8) {
-      toast.error("Password must be at least 8 characters long.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast.error("Passwords do not match.");
-      return;
-    }
-    setIsLoading(true);
-    const result = await setupPassword(token, newPassword);
-    if (!result.ok) {
-      toast.error(result.error);
-    } else if (result.data.success) {
-      toast.success("Password changed successfully!");
-      const signInResult = await authClient.signIn.email({
-        email,
-        password: newPassword,
-      });
-      if (signInResult.error) {
-        toast.error(
-          "Password changed but sign in failed. Please log in manually.",
-        );
-        router.push("/auth/login");
-      } else {
-        router.push("/auth/setup-2fa");
-      }
-    }
-    setIsLoading(false);
-  };
-  return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Set up your password</CardTitle>
-        <CardDescription>
-          Create a secure password for{" "}
-          <span className="font-medium">{email}</span>
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="newPassword">Password</Label>
-            <Input
-              id="newPassword"
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Enter a secure password"
-              required
-              minLength={8}
-              disabled={isLoading}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="confirmPassword">Confirm password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your password"
-              required
-              minLength={8}
-              disabled={isLoading}
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? "Setting up..." : "Set password & continue"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
-  );
-}
-```
 
-## File: src/lib/auth.ts
-```typescript
-import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
-import { admin as adminPlugin, twoFactor } from "better-auth/plugins";
-import { prisma } from "@/db";
-import { sendEmail } from "@/services/email";
-import { ac, adminRole, employeeRole, superadminRole } from "./permission";
-export const auth = betterAuth({
-  trustedOrigins: ["https://portfolio.digitalcovet.com"],
-  database: prismaAdapter(prisma, {
-    provider: "postgresql",
-  }),
-  emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: true,
-    sendResetPassword: async ({ user, url }, _request) => {
-      try {
-        await sendEmail({
-          to: user.email,
-          subject: "Reset your password",
-          text: `Click the link to reset your password: ${url}`,
-        });
-      } catch (error) {
-        console.error(
-          "[Auth Hook] Failed to send reset password email:",
-          error instanceof Error ? error.message : error,
-        );
-        throw new Error("Failed to send reset password email.");
-      }
-    },
-  },
-  emailVerification: {
-    sendOnSignUp: true,
-    sendOnSignIn: true,
-    sendVerificationEmail: async ({ user, url }, _request) => {
-      try {
-        await sendEmail({
-          to: user.email,
-          subject: "Verify your email address",
-          text: `Click the link to verify your email: ${url}`,
-        });
-      } catch (error) {
-        console.error(
-          "[Auth Hook] Failed to send verification email:",
-          error instanceof Error ? error.message : error,
-        );
-        throw new Error("Failed to send verification email.");
-      }
-    },
-  },
-  user: {
-    additionalFields: {
-      departmentId: {
-        type: "string",
-        required: false,
-        defaultValue: null,
-      },
-      passwordChanged: {
-        type: "boolean",
-        required: false,
-        defaultValue: false,
-      },
-    },
-  },
-  plugins: [
-    twoFactor({
-      issuer: "Digital Covet",
-    }),
-    adminPlugin({
-      defaultRole: "employee",
-      ac,
-      roles: {
-        superadmin: superadminRole,
-        admin: adminRole,
-        employee: employeeRole,
-      },
-    }),
-  ],
-});
+model User {
+  id                  String       @id
+  name                String
+  email               String
+  emailVerified       Boolean      @default(false)
+  image               String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  twoFactorEnabled    Boolean?     @default(false)
+  passwordChanged     Boolean      @default(false)
+  role                UserRole     @default(employee)
+  banned              Boolean?     @default(false)
+  banReason           String?
+  banExpires          DateTime?
+  departmentId        String?
+  sessions            Session[]
+  accounts            Account[]
+  twofactors          TwoFactor[]
+  caseStudies         CaseStudy[]  @relation("CaseStudyCreatedBy")
+  shareLinks          ShareLink[]  @relation("ShareLinkCreatedBy")
+  invitations         Invitation[] @relation("InvitationInvitedBy")
+  assignedInvitations Invitation[] @relation("InvitationUser")
+  clients             Client[]     @relation("ClientCreatedBy")
+
+  @@unique([email])
+  @@index([departmentId])
+  @@map("user")
+}
+
+model Session {
+  id             String   @id
+  expiresAt      DateTime
+  token          String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  ipAddress      String?
+  userAgent      String?
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impersonatedBy String?
+
+  @@unique([token])
+  @@index([userId])
+  @@index([userId, expiresAt])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@index([identifier, expiresAt])
+  @@map("verification")
+}
+
+model TwoFactor {
+  id          String   @id
+  secret      String
+  backupCodes String
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  verified    Boolean? @default(true)
+
+  @@index([userId])
+  @@map("twoFactor")
+}
+
+model Industry {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+  sectorId  String?  @map("sector_id")
+
+  sector        Sector?       @relation(fields: [sectorId], references: [id], onDelete: Restrict)
+  keyBusinesses KeyBusiness[]
+
+  @@index([sectorId])
+  @@map("industries")
+}
+
+enum CaseStudyStatus {
+  draft
+  published
+  archived
+}
+
+model Client {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  logoUrl   String?  @map("logo_url")
+  name      String
+  updatedAt DateTime @default(now()) @map("updated_at")
+  createdBy String?  @map("created_by")
+
+  createdByUser       User?               @relation("ClientCreatedBy", fields: [createdBy], references: [id])
+  clientKeyBusinesses ClientKeyBusiness[]
+  caseStudies         CaseStudy[]
+
+  @@index([createdBy])
+  @@map("clients")
+}
+
+model WorkCategory {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+
+  caseStudyCategories CaseStudyCategory[]
+
+  @@map("work_categories")
+}
+
+model Service {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+
+  caseStudyServices CaseStudyService[]
+
+  @@map("services")
+}
+
+model Sector {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+
+  industries Industry[]
+
+  @@map("sectors")
+}
+
+model KeyBusiness {
+  id         String   @id @default(uuid())
+  createdAt  DateTime @default(now()) @map("created_at")
+  name       String
+  industryId String?  @map("industry_id")
+
+  industry               Industry?              @relation(fields: [industryId], references: [id], onDelete: Restrict)
+  caseStudyKeyBusinesses CaseStudyKeyBusiness[]
+  clientKeyBusinesses    ClientKeyBusiness[]
+
+  @@index([industryId])
+  @@map("key_businesses")
+}
+
+model BusinessModel {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  name      String
+
+  caseStudyBusinessModels CaseStudyBusinessModel[]
+
+  @@map("business_models")
+}
+
+model ClientKeyBusiness {
+  clientId      String @map("client_id")
+  keyBusinessId String @map("key_business_id")
+
+  client      Client      @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  keyBusiness KeyBusiness @relation(fields: [keyBusinessId], references: [id], onDelete: Cascade)
+
+  @@id([clientId, keyBusinessId])
+  @@index([clientId])
+  @@map("client_key_businesses")
+}
+
+model CaseStudy {
+  id                String          @id @default(uuid())
+  attachmentUrls    Json?           @map("attachment_urls")
+  challenge         String?
+  clientId          String?         @map("client_id")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  createdBy         String?         @map("created_by")
+  description       String?
+  galleryUrls       String[]        @map("gallery_urls")
+  heroImageUrl      String?         @map("hero_image_url")
+  projectDate       DateTime?       @map("project_date")
+  results           String?
+  slug              String          @unique
+  solution          String?
+  status            CaseStudyStatus @default(draft)
+  testimonialAuthor String?         @map("testimonial_author")
+  testimonialQuote  String?         @map("testimonial_quote")
+  testimonialTitle  String?         @map("testimonial_title")
+  title             String
+  updatedAt         DateTime        @default(now()) @map("updated_at")
+  videoEmbedUrl     String?         @map("video_embed_url")
+
+  client                 Client?                @relation(fields: [clientId], references: [id])
+  createdByUser          User?                  @relation("CaseStudyCreatedBy", fields: [createdBy], references: [id])
+  caseStudyCategories    CaseStudyCategory[]
+  caseStudyKeyBusinesses CaseStudyKeyBusiness[]
+  caseStudyBusinessModels CaseStudyBusinessModel[]
+  caseStudyMetrics       CaseStudyMetric[]
+  caseStudyServices      CaseStudyService[]
+
+  @@index([createdBy])
+  @@index([createdAt(sort: Desc)])
+  @@index([status, createdAt(sort: Desc)])
+  @@map("case_studies")
+}
+
+model CaseStudyCategory {
+  caseStudyId String @map("case_study_id")
+  categoryId  String @map("category_id")
+
+  caseStudy    CaseStudy    @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  workCategory WorkCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([caseStudyId, categoryId])
+  @@index([caseStudyId])
+  @@map("case_study_categories")
+}
+
+model CaseStudyMetric {
+  id          String  @id @default(uuid())
+  caseStudyId String  @map("case_study_id")
+  label       String
+  sortOrder   Int     @default(0) @map("sort_order")
+  unit        String?
+  value       String
+
+  caseStudy CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+
+  @@index([caseStudyId])
+  @@map("case_study_metrics")
+}
+
+model CaseStudyService {
+  caseStudyId String @map("case_study_id")
+  serviceId   String @map("service_id")
+
+  caseStudy CaseStudy @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  service   Service   @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([caseStudyId, serviceId])
+  @@index([caseStudyId])
+  @@map("case_study_services")
+}
+
+model CaseStudyKeyBusiness {
+  caseStudyId   String @map("case_study_id")
+  keyBusinessId String @map("key_business_id")
+
+  caseStudy   CaseStudy   @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  keyBusiness KeyBusiness @relation(fields: [keyBusinessId], references: [id], onDelete: Cascade)
+
+  @@id([caseStudyId, keyBusinessId])
+  @@index([caseStudyId])
+  @@map("case_study_key_businesses")
+}
+
+model CaseStudyBusinessModel {
+  id             String   @id @default(uuid())
+  caseStudyId    String   @map("case_study_id")
+  businessModelId String @map("business_model_id")
+
+  caseStudy    CaseStudy    @relation(fields: [caseStudyId], references: [id], onDelete: Cascade)
+  businessModel BusinessModel @relation(fields: [businessModelId], references: [id], onDelete: Cascade)
+
+  @@unique([caseStudyId, businessModelId])
+  @@index([caseStudyId])
+  @@map("case_study_business_models")
+}
+
+model ShareLink {
+  id                   String    @id @default(uuid())
+  createdAt            DateTime  @default(now()) @map("created_at")
+  createdBy            String?   @map("created_by")
+  expiresAt            DateTime? @map("expires_at")
+  filterCategoryIds    String[]  @map("filter_category_ids")
+  filterClientIds      String[]  @map("filter_client_ids")
+  filterSectorIds      String[]  @map("filter_sector_ids")
+  filterIndustryIds    String[]  @map("filter_industry_ids")
+  filterKeyBusinessIds String[]  @map("filter_key_business_ids")
+  filterServiceIds     String[]  @map("filter_service_ids")
+  maxViews             Int?      @map("max_views")
+  name                 String
+  passwordHash         String?   @map("password_hash")
+  recipientEmail       String?   @map("recipient_email")
+  recipientName        String?   @map("recipient_name")
+  revoked              Boolean   @default(false)
+  specificCaseStudyIds String[]  @map("specific_case_study_ids")
+  token                String    @unique
+  viewCount            Int       @default(0) @map("view_count")
+
+  createdByUser User?       @relation("ShareLinkCreatedBy", fields: [createdBy], references: [id])
+  shareViews    ShareView[]
+
+  @@map("share_links")
+}
+
+model ShareView {
+  id          String   @id @default(uuid())
+  ip          String?
+  sessionId   String?  @map("session_id")
+  shareLinkId String   @map("share_link_id")
+  userAgent   String?  @map("user_agent")
+  viewedAt    DateTime @default(now()) @map("viewed_at")
+
+  shareLink ShareLink @relation(fields: [shareLinkId], references: [id], onDelete: Cascade)
+
+  @@unique([shareLinkId, sessionId])
+  @@index([shareLinkId, viewedAt])
+  @@index([viewedAt])
+  @@map("share_views")
+}
+
+model Invitation {
+  id        String    @id @default(cuid())
+  email     String
+  token     String    @unique
+  role      UserRole  @default(employee)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  invitedBy String?   @map("invited_by")
+  userId    String?   @map("user_id")
+
+  invitedByUser User? @relation("InvitationInvitedBy", fields: [invitedBy], references: [id])
+  user          User? @relation("InvitationUser", fields: [userId], references: [id])
+
+  @@index([email])
+  @@map("invitations")
+}
 ```

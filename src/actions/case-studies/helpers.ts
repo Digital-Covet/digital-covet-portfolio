@@ -4,7 +4,7 @@ type RelationSyncInput = {
   categoryIds: string[];
   serviceIds: string[];
   keyBusinessIds: string[];
-  businessModelId: string | null;
+  businessModelIds: string[];
   metrics: { label: string; value: string; unit: string | null }[];
 };
 
@@ -61,13 +61,14 @@ export async function syncCaseStudyRelations(
     );
   }
 
-  if (input.businessModelId) {
+  if (input.businessModelIds.length) {
     creates.push(
-      tx.caseStudyBusinessModel.create({
-        data: {
+      tx.caseStudyBusinessModel.createMany({
+        data: input.businessModelIds.map((businessModelId) => ({
           caseStudyId,
-          businessModelId: input.businessModelId,
-        },
+          businessModelId,
+        })),
+        skipDuplicates: true,
       }),
     );
   }

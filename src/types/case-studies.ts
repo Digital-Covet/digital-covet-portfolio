@@ -37,7 +37,7 @@ export type Basics = {
   sectorId: string | null;
   industryId: string | null;
   keyBusinessIds: string[];
-  businessModelId: string | null;
+  businessModelIds: string[];
   projectDate: string | null;
   status: "draft" | "published" | "archived";
 };
@@ -100,7 +100,7 @@ export type CaseStudyResponse = {
   >;
   categoryIds: string[];
   serviceIds: string[];
-  businessModelId: string | null;
+  businessModelIds: string[];
   metrics: Metric[];
 };
 

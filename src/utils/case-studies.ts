@@ -44,7 +44,7 @@ export function createEmptyForm(): CaseStudyForm {
       sectorId: null,
       industryId: null,
       keyBusinessIds: [],
-      businessModelId: null,
+      businessModelIds: [],
       projectDate: null,
       status: "draft",
     },
@@ -90,7 +90,7 @@ export function mapDbToForm(db: CaseStudyResponse): CaseStudyForm {
       industryId:
         study.caseStudyKeyBusinesses[0]?.keyBusiness?.industryId ?? null,
       keyBusinessIds: study.caseStudyKeyBusinesses.map((k) => k.keyBusinessId),
-      businessModelId: db.businessModelId,
+      businessModelIds: db.businessModelIds,
 
       projectDate: study.projectDate
         ? study.projectDate.toISOString().split("T")[0]!
@@ -129,7 +129,7 @@ export function buildSavePayload(form: CaseStudyForm) {
     slug: form.basics.slug || slugify(form.basics.title),
     clientId: form.basics.clientId,
     keyBusinessIds: form.basics.keyBusinessIds,
-    businessModelId: form.basics.businessModelId,
+    businessModelIds: form.basics.businessModelIds,
     projectDate: form.basics.projectDate,
     heroImageUrl: form.media.heroImageUrl,
     galleryUrls: form.media.galleryUrls,

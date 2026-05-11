@@ -48,7 +48,7 @@ type BasicsProps = {
   sectorId: string | null;
   industryId: string | null;
   keyBusinessIds: string[];
-  businessModelId: string | null;
+  businessModelIds: string[];
   projectDate: string | null;
   videoEmbedUrl: string | null;
   clients: Client[];
@@ -62,7 +62,7 @@ type BasicsProps = {
   onSectorChange: (id: string | null) => void;
   onIndustryChange: (id: string | null) => void;
   onKeyBusinessIdsChange: (ids: string[]) => void;
-  onBusinessModelIdChange: (id: string | null) => void;
+  onBusinessModelIdsChange: (ids: string[]) => void;
   onProjectDateChange: (date: string | null) => void;
   onVideoEmbedChange: (url: string | null) => void;
 };
@@ -74,7 +74,7 @@ export function BasicsSection({
   sectorId,
   industryId,
   keyBusinessIds,
-  businessModelId,
+  businessModelIds,
   projectDate,
   videoEmbedUrl,
   clients,
@@ -88,7 +88,7 @@ export function BasicsSection({
   onSectorChange,
   onIndustryChange,
   onKeyBusinessIdsChange,
-  onBusinessModelIdChange,
+  onBusinessModelIdsChange,
   onProjectDateChange,
   onVideoEmbedChange,
 }: BasicsProps) {
@@ -234,29 +234,36 @@ export function BasicsSection({
           </div>
 
           <div className="space-y-2">
-            <Label>Business Model</Label>
-            <Select
-              value={businessModelId ?? "none"}
-              onValueChange={(v) =>
-                onBusinessModelIdChange(v === "none" ? null : v)
-              }
-            >
-              <SelectTrigger>
-                <SelectValue>
-                  {businessModelId && businessModelId !== "none"
-                    ? businessModels.find((m) => m.id === businessModelId)?.name
-                    : undefined}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">— None —</SelectItem>
-                {businessModels.map((m) => (
-                  <SelectItem key={m.id} value={m.id}>
+            <Label>Business Models</Label>
+            <div className="space-y-2 border p-3">
+              {businessModels.length > 0 ? (
+                businessModels.map((m) => (
+                  <label
+                    key={m.id}
+                    className="flex items-center gap-2 text-sm"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={businessModelIds.includes(m.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          onBusinessModelIdsChange([...businessModelIds, m.id]);
+                        } else {
+                          onBusinessModelIdsChange(
+                            businessModelIds.filter((id) => id !== m.id),
+                          );
+                        }
+                      }}
+                    />
                     {m.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  </label>
+                ))
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  No business models defined yet
+                </p>
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">

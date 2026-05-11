@@ -10,6 +10,7 @@ const PUBLIC_ROUTES: AppRoute[] = [
   ROUTES.SETUP_PASSWORD,
   ROUTES.VERIFY_2FA,
   ROUTES.SETUP_2FA,
+  ROUTES.TEST_INVITE,
 ];
 
 function isPublicRoute(pathname: string): boolean {

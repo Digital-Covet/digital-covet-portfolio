@@ -13,6 +13,7 @@ export const ROUTES = {
   SETUP_2FA: "/auth/setup-2fa",
   VERIFY_2FA: "/auth/verify-2fa",
   DASHBOARD: "/dashboard",
+  TEST_INVITE: "/test-invite",
 } as const;
 
 export const ROLES = {

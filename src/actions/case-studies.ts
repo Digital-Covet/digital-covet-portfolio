@@ -80,7 +80,7 @@ export async function upsertCaseStudy(
         categoryIds: data.categoryIds,
         serviceIds: data.serviceIds,
         keyBusinessIds: data.keyBusinessIds,
-        businessModelId: data.businessModelId ?? null,
+        businessModelIds: data.businessModelIds,
         metrics: data.metrics,
       });
 
@@ -207,12 +207,12 @@ export async function getCaseStudy(input: {
       caseStudyBusinessModels,
       ...studyData
     } = study;
-    const businessModelId = caseStudyBusinessModels[0]?.businessModelId ?? null;
+    const businessModelIds = caseStudyBusinessModels.map((b) => b.businessModelId);
     return ok({
       study: studyData,
       categoryIds: caseStudyCategories.map((c) => c.categoryId),
       serviceIds: caseStudyServices.map((s) => s.serviceId),
-      businessModelId,
+      businessModelIds,
       metrics: caseStudyMetrics.map(({ label, value, unit }) => ({
         label,
         value,

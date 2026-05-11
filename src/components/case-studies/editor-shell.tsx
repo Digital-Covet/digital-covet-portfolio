@@ -84,7 +84,7 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
           sectorId={form.basics.sectorId}
           industryId={form.basics.industryId}
           keyBusinessIds={form.basics.keyBusinessIds}
-          businessModelId={form.basics.businessModelId}
+          businessModelIds={form.basics.businessModelIds}
           projectDate={form.basics.projectDate}
           videoEmbedUrl={form.media.videoEmbedUrl}
           clients={taxonomies.clients}
@@ -98,7 +98,7 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
           onSectorChange={basicsHandlers.onSectorChange}
           onIndustryChange={basicsHandlers.onIndustryChange}
           onKeyBusinessIdsChange={basicsHandlers.onKeyBusinessIdsChange}
-          onBusinessModelIdChange={basicsHandlers.onBusinessModelIdChange}
+          onBusinessModelIdsChange={basicsHandlers.onBusinessModelIdsChange}
           onProjectDateChange={basicsHandlers.onProjectDateChange}
           onVideoEmbedChange={mediaHandlers.onVideoEmbedChange}
         />

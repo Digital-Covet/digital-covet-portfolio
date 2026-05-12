@@ -38,7 +38,7 @@ export function slugify(s: string): string {
 export function createEmptyForm(): CaseStudyForm {
   return {
     basics: {
-      title: "",
+      title: "Untitled",
       slug: "",
       clientId: null,
       sectorId: null,

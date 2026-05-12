@@ -1,6 +1,7 @@
 "use client";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { upsertCaseStudy } from "@/actions/case-studies";
 import type {
@@ -39,11 +40,47 @@ export function useCaseStudyForm({
     initialData ? mapDbToForm(initialData) : createEmptyForm(),
   );
 
-  // Ref to always access current form state without subscribing to changes
   const formRef = useRef(form);
   formRef.current = form;
 
+  const lastSavedRef = useRef<string | null>(null);
+  const lastSavedAtRef = useRef<Date | null>(null);
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+
   const [isPending, startTransition] = useTransition();
+
+  const performAutosave = useCallback(() => {
+    const currentForm = formRef.current;
+    if (!currentForm.basics.title.trim()) return;
+
+    const serialized = JSON.stringify(currentForm);
+    if (serialized === lastSavedRef.current) return;
+
+    lastSavedRef.current = serialized;
+    startTransition(async () => {
+      const payload = buildSavePayload(currentForm);
+      const result = await upsertCaseStudy(payload);
+      if (!result.ok) {
+        toast.error("Autosave failed");
+        return;
+      }
+      const now = new Date();
+      lastSavedAtRef.current = now;
+      setLastSavedAt(now);
+      if (isNew) {
+        router.push(`/case-studies/${result.data.id}`);
+      }
+    });
+  }, [isNew, router]);
+
+  useEffect(() => {
+    if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    autosaveTimerRef.current = setTimeout(performAutosave, 30000);
+    return () => {
+      if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current);
+    };
+  }, [form, performAutosave]);
 
   const updateBasics = useCallback(
     <K extends keyof CaseStudyForm["basics"]>(
@@ -244,6 +281,7 @@ export function useCaseStudyForm({
     form,
     taxonomies,
     saving: isPending,
+    lastSavedAt,
     isNew,
     updateStory,
     updateTestimonial,

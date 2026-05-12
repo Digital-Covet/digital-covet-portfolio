@@ -1,4 +1,3 @@
-// src/components/case-studies/editor-shell.tsx (refactored)
 "use client";
 import {
   BasicsSection,
@@ -29,6 +28,7 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
   const {
     form,
     saving,
+    lastSavedAt,
     isNew,
     updateStory,
     updateTestimonial,
@@ -53,6 +53,11 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
           {isNew ? "New case study" : "Edit case study"}
         </h1>
         <div className="flex items-center gap-2">
+          {lastSavedAt && (
+            <span className="text-xs text-muted-foreground">
+              {saving ? "Saving…" : `Saved ${lastSavedAt.toLocaleTimeString()}`}
+            </span>
+          )}
           <Select
             value={form.basics.status}
             onValueChange={(v) =>

@@ -55,6 +55,17 @@ export async function deleteClient(input: {
   return runAction(async () => {
     await requireRole("admin");
     const { id } = z.object({ id: uuidSchema }).parse(input);
+
+    const caseStudyCount = await prisma.caseStudy.count({
+      where: { clientId: id },
+    });
+    if (caseStudyCount > 0) {
+      throw new ActionException(
+        "CONFLICT",
+        `Cannot delete: ${caseStudyCount} case study${caseStudyCount > 1 ? "ies" : "y"} reference${caseStudyCount > 1 ? "" : "s"} this client. Remove the client from them first.`,
+      );
+    }
+
     await prisma.client.delete({ where: { id } });
     revalidatePath("/clients");
     revalidatePath("/shares/new");

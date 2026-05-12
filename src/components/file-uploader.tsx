@@ -2,6 +2,8 @@ import { UploadSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { useRef, useTransition } from "react";
 import { toast } from "sonner";
 import { getUploadPresignedUrl } from "@/actions/files";
+import type { ImageRequirement } from "@/utils/image-validation";
+import { validateImage } from "@/utils/image-validation";
 import { Button } from "@/components/ui/button";
 
 type Bucket = "client-logos" | "case-study-media" | "case-study-attachments";
@@ -11,11 +13,13 @@ export function FileUploader({
   accept,
   label = "Upload",
   onUploaded,
+  imageRequirement,
 }: {
   bucket: Bucket;
   accept?: string;
   label?: string;
   onUploaded: (file: { url: string; name: string }) => void;
+  imageRequirement?: ImageRequirement;
 }) {
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -29,7 +33,15 @@ export function FileUploader({
       return;
     }
 
-    // Preserve the content type before any async boundaries
+    if (imageRequirement) {
+      const result = await validateImage(file, imageRequirement);
+      if (!result.valid) {
+        toast.error(result.error);
+        e.target.value = "";
+        return;
+      }
+    }
+
     const contentType = file.type || "application/octet-stream";
 
     startTransition(async () => {

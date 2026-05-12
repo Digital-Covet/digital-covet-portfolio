@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { deleteClient, upsertClient } from "@/actions/clients";
 import { FileUploader, ImagePreview } from "@/components/file-uploader";
+import { LOGO_REQUIREMENTS } from "@/utils/image-validation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -115,6 +116,7 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
                   bucket="client-logos"
                   accept="image/*"
                   label="Upload logo"
+                  imageRequirement={LOGO_REQUIREMENTS}
                   onUploaded={(f) => setEditing({ ...editing, logoUrl: f.url })}
                 />
               </div>

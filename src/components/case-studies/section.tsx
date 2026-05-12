@@ -1,6 +1,7 @@
 import { PlusIcon, TrashIcon, XIcon } from "@phosphor-icons/react";
 
 import { FileUploader, ImagePreview } from "@/components/file-uploader";
+import { HERO_IMAGE_REQUIREMENTS } from "@/utils/image-validation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -369,8 +370,9 @@ export function MediaSection({
             )}
             <FileUploader
               bucket="case-study-media"
-              accept="image/*"
+              accept="image/jpeg,image/jpg"
               label="Upload hero"
+              imageRequirement={HERO_IMAGE_REQUIREMENTS}
               onUploaded={(f) => onHeroChange(f.url)}
             />
           </div>

@@ -373,6 +373,7 @@ export function MediaSection({
               accept="image/jpeg,image/jpg"
               label="Upload hero"
               imageRequirement={HERO_IMAGE_REQUIREMENTS}
+              hint="Min 1660×588px, 415:147 ratio, JPG only"
               onUploaded={(f) => onHeroChange(f.url)}
             />
           </div>
@@ -391,7 +392,10 @@ export function MediaSection({
             <FileUploader
               bucket="case-study-media"
               accept="image/*"
-              label="Add image"
+              label="Add images"
+              multiple
+              maxFiles={30}
+              hint="Max 30 images"
               onUploaded={(f) => onGalleryAdd(f.url)}
             />
           </div>

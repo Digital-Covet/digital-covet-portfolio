@@ -14,75 +14,83 @@ export function FileUploader({
   label = "Upload",
   onUploaded,
   imageRequirement,
+  hint,
+  multiple,
+  maxFiles,
 }: {
   bucket: Bucket;
   accept?: string;
   label?: string;
   onUploaded: (file: { url: string; name: string }) => void;
   imageRequirement?: ImageRequirement;
+  hint?: string;
+  multiple?: boolean;
+  maxFiles?: number;
 }) {
   const [isPending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  async function handle(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
 
-    if (file.size > 15 * 1024 * 1024) {
-      toast.error("File too large (max 15MB)");
+    if (maxFiles && files.length > maxFiles) {
+      toast.error(`Maximum ${maxFiles} files allowed`);
       return;
     }
 
-    if (imageRequirement) {
-      const result = await validateImage(file, imageRequirement);
-      if (!result.valid) {
-        toast.error(result.error);
-        e.target.value = "";
-        return;
+    const fileArray = multiple ? Array.from(files) : [files[0]];
+
+    for (const file of fileArray) {
+      if (file.size > 15 * 1024 * 1024) {
+        toast.error(`${file.name}: File too large (max 15MB)`);
+        continue;
       }
+
+      if (imageRequirement) {
+        const result = await validateImage(file, imageRequirement);
+        if (!result.valid) {
+          toast.error(`${file.name}: ${result.error}`);
+          continue;
+        }
+      }
+
+      const contentType = file.type || "application/octet-stream";
+
+      startTransition(async () => {
+        try {
+          const res = await getUploadPresignedUrl({
+            bucket,
+            filename: file.name,
+            contentType,
+          });
+
+          if (!res.ok) {
+            toast.error(res.error.message);
+            return;
+          }
+
+          const uploadRes = await fetch(res.data.presignedUrl, {
+            method: "PUT",
+            body: file,
+            headers: {
+              "Content-Type": contentType,
+            },
+          });
+
+          if (!uploadRes.ok) {
+            const detail = await uploadRes.text().catch(() => "");
+            console.error("R2 upload failed:", uploadRes.status, detail);
+            toast.error("Upload to storage failed");
+            return;
+          }
+
+          onUploaded({ url: res.data.proxyUrl, name: file.name });
+          toast.success("Uploaded");
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Upload failed");
+        }
+      });
     }
-
-    const contentType = file.type || "application/octet-stream";
-
-    startTransition(async () => {
-      try {
-        // Step 1: Request a pre-signed URL from the server
-        const res = await getUploadPresignedUrl({
-          bucket,
-          filename: file.name,
-          contentType,
-        });
-
-        if (!res.ok) {
-          toast.error(res.error.message);
-          return;
-        }
-
-        // Step 2: PUT the file directly to R2 using the pre-signed URL
-        const uploadRes = await fetch(res.data.presignedUrl, {
-          method: "PUT",
-          body: file,
-          headers: {
-            "Content-Type": contentType,
-          },
-        });
-
-        if (!uploadRes.ok) {
-          const detail = await uploadRes.text().catch(() => "");
-          console.error("R2 upload failed:", uploadRes.status, detail);
-          toast.error("Upload to storage failed");
-          return;
-        }
-
-        // Step 3: Surface the proxy URL to the parent form
-        onUploaded({ url: res.data.proxyUrl, name: file.name });
-        toast.success("Uploaded");
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Upload failed");
-      } finally {
-        e.target.value = "";
-      }
-    });
   }
 
   return (
@@ -92,7 +100,8 @@ export function FileUploader({
         type="file"
         className="sr-only peer"
         accept={accept}
-        onChange={handle}
+        multiple={multiple}
+        onChange={(e) => handleFiles(e.target.files)}
         disabled={isPending}
       />
       <Button
@@ -106,6 +115,9 @@ export function FileUploader({
         <UploadSimpleIcon size={16} className="mr-2" />
         {isPending ? "Uploading…" : label}
       </Button>
+      {hint && (
+        <p className="text-xs text-muted-foreground">{hint}</p>
+      )}
     </>
   );
 }

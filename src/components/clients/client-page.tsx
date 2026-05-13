@@ -117,6 +117,7 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
                   accept="image/*"
                   label="Upload logo"
                   imageRequirement={LOGO_REQUIREMENTS}
+                  hint="Min 512×512px, 1:1 ratio, PNG/JPG/WEBP/SVG"
                   onUploaded={(f) => setEditing({ ...editing, logoUrl: f.url })}
                 />
               </div>

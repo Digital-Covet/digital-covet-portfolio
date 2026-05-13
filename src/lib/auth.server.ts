@@ -39,6 +39,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
     id: u.id,
     email: u.email,
     name: u.name,
+    image: (u.image as string | null | undefined) ?? null,
 
     role: UserRoleSchema.parse(u.role),
     departmentId: (u.departmentId as string | null | undefined) ?? null,

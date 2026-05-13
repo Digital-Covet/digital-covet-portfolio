@@ -12,4 +12,5 @@ export interface AuthUser {
   twoFactorEnabled: boolean;
 
   passwordChanged: boolean;
+  image: string | null;
 }

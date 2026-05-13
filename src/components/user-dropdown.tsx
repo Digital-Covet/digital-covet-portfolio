@@ -1,15 +1,15 @@
 "use client";
 
 import { GearIcon, SignOutIcon } from "@phosphor-icons/react";
-import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import Avatar from "@/assets/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Avatar from "@/assets/avatar";
+import { authClient } from "@/lib/auth-client";
 
 export function UserDropdown() {
   const router = useRouter();
@@ -26,7 +26,7 @@ export function UserDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-44">
         <DropdownMenuItem
-          onClick={() => router.push("/account")}
+          onClick={() => router.push("/account/settings")}
           className="cursor-pointer"
         >
           <GearIcon />

@@ -7,10 +7,6 @@ import {
   TrashIcon,
 } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
-import { toast } from "sonner";
-
-import { deleteCaseStudy, listCaseStudies } from "@/actions/case-studies";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,7 +18,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -32,76 +27,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { CaseStudyListItem } from "@/types/case-studies";
+import { useCaseStudiesList } from "@/hooks/case-studies/useCaseStudiesList";
 
-type StatusFilter = "all" | "draft" | "published" | "archived";
+const STATUS_FILTERS = ["all", "published", "draft", "archived"] as const;
 
 export default function CaseStudiesListPage() {
-  const [studies, setStudies] = useState<CaseStudyListItem[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [q, setQ] = useState("");
-  const [filter, setFilter] = useState<StatusFilter>("all");
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [debouncedQ, setDebouncedQ] = useState("");
-
-  const [isLoading, startLoadTransition] = useTransition();
-  const [isDeleting, startDeleteTransition] = useTransition();
-
-  useEffect(() => {
-    if (searchTimer.current) clearTimeout(searchTimer.current);
-    searchTimer.current = setTimeout(() => setDebouncedQ(q), 300);
-    return () => {
-      if (searchTimer.current) clearTimeout(searchTimer.current);
-    };
-  }, [q]);
-
-  const load = useCallback(
-    (cursor?: string) => {
-      startLoadTransition(async () => {
-        const result = await listCaseStudies({
-          status: filter === "all" ? undefined : filter,
-          search: debouncedQ || undefined,
-          cursor,
-        });
-
-        if (!result.ok) {
-          toast.error(result.error.message);
-          return;
-        }
-
-        setStudies((prev) =>
-          cursor ? [...prev, ...result.data.studies] : result.data.studies,
-        );
-        setNextCursor(result.data.nextCursor);
-      });
-    },
-    [filter, debouncedQ],
-  );
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  function handleDelete() {
-    if (!deleteId) return;
-    startDeleteTransition(async () => {
-      const result = await deleteCaseStudy({ id: deleteId });
-      setDeleteId(null);
-      if (!result.ok) {
-        toast.error(result.error.message);
-        return;
-      }
-      toast.success("Deleted");
-
-      load();
-    });
-  }
+  const vm = useCaseStudiesList(); // ✅ All logic encapsulated in hook
 
   return (
     <div className="max-w-6xl p-6 md:p-10">
-      {}
+      {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Case Studies</h1>
@@ -116,40 +51,38 @@ export default function CaseStudiesListPage() {
               New case study
             </Link>
           }
-        ></Button>
+        />
       </div>
 
-      {}
+      {/* Filters */}
       <div className="mt-6 flex flex-wrap gap-3">
         <div className="relative min-w-50 flex-1">
           <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             className="pl-9"
             placeholder="Search title…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
+            value={vm.searchQuery}
+            onChange={(e) => vm.setSearchQuery(e.target.value)}
           />
         </div>
-
-        <div className="flex gap-1 border p-1">
-          {(["all", "published", "draft", "archived"] as const).map((f) => (
+        <div className="flex gap-1 border p-1 rounded">
+          {STATUS_FILTERS.map((filter) => (
             <button
-              key={f}
+              key={filter}
               type="button"
-              onClick={() => setFilter(f)}
-              className={`px-3 py-1 text-xs font-medium capitalize transition-colors ${
-                filter === f
+              onClick={() => vm.setStatusFilter(filter)}
+              className={`px-3 py-1 text-xs font-medium capitalize transition-colors rounded ${vm.statusFilter === filter
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted"
-              }`}
+                }`}
             >
-              {f}
+              {filter}
             </button>
           ))}
         </div>
       </div>
 
-      {}
+      {/* Table */}
       <Table className="mt-6">
         <TableHeader>
           <TableRow>
@@ -161,7 +94,7 @@ export default function CaseStudiesListPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {isLoading && studies.length === 0 ? (
+          {vm.isLoading && vm.studies.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={5}
@@ -170,7 +103,7 @@ export default function CaseStudiesListPage() {
                 Loading…
               </TableCell>
             </TableRow>
-          ) : studies.length === 0 ? (
+          ) : vm.studies.length === 0 ? (
             <TableRow>
               <TableCell
                 colSpan={5}
@@ -180,19 +113,21 @@ export default function CaseStudiesListPage() {
               </TableCell>
             </TableRow>
           ) : (
-            studies.map((s) => (
-              <TableRow key={s.id}>
-                <TableCell className="font-medium">{s.title}</TableCell>
-                <TableCell>{s.client?.name ?? "No client"}</TableCell>
+            vm.studies.map((study) => (
+              <TableRow key={study.id}>
+                <TableCell className="font-medium">{study.title}</TableCell>
+                <TableCell>{study.client?.name ?? "No client"}</TableCell>
                 <TableCell>
-                  {s.keyBusinesses.map((k) => k.name).join(", ") ||
+                  {study.keyBusinesses.map((k) => k.name).join(", ") ||
                     "No key business"}
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={s.status === "published" ? "default" : "secondary"}
+                    variant={
+                      study.status === "published" ? "default" : "secondary"
+                    }
                   >
-                    {s.status}
+                    {study.status}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
@@ -201,7 +136,7 @@ export default function CaseStudiesListPage() {
                       variant="ghost"
                       size="icon"
                       render={
-                        <Link href={`/case-studies/${s.id}`}>
+                        <Link href={`/case-studies/${study.id}`}>
                           <PencilSimpleIcon size={16} />
                         </Link>
                       }
@@ -209,8 +144,8 @@ export default function CaseStudiesListPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => setDeleteId(s.id)}
-                      disabled={isDeleting}
+                      onClick={() => vm.initiateDelete(study.id)}
+                      disabled={vm.isDeleting}
                     >
                       <TrashIcon size={16} />
                     </Button>
@@ -222,24 +157,24 @@ export default function CaseStudiesListPage() {
         </TableBody>
       </Table>
 
-      {}
-      {nextCursor && (
+      {/* Load More */}
+      {vm.nextCursor && (
         <div className="mt-6 flex justify-center">
           <Button
             variant="outline"
-            onClick={() => load(nextCursor)}
-            disabled={isLoading}
+            onClick={vm.loadMore}
+            disabled={vm.isLoading}
           >
-            {isLoading ? "Loading…" : "Load more"}
+            {vm.isLoading ? "Loading…" : "Load more"}
           </Button>
         </div>
       )}
 
-      {}
+      {/* Delete Confirmation */}
       <AlertDialog
-        open={!!deleteId}
+        open={!!vm.deleteTargetId}
         onOpenChange={(open) => {
-          if (!open) setDeleteId(null);
+          if (!open) vm.cancelDelete();
         }}
       >
         <AlertDialogContent>
@@ -249,11 +184,14 @@ export default function CaseStudiesListPage() {
             study.
           </AlertDialogDescription>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteId(null)}>
+            <AlertDialogCancel onClick={vm.cancelDelete}>
               Cancel
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={isDeleting}>
-              {isDeleting ? "Deleting…" : "Delete"}
+            <AlertDialogAction
+              onClick={vm.confirmDelete}
+              disabled={vm.isDeleting}
+            >
+              {vm.isDeleting ? "Deleting…" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -1,25 +1,74 @@
+"use client";
+
+import dynamic from "next/dynamic";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { Taxonomy } from "@/types/case-studies";
 
+// Dynamic import to avoid SSR issues with the Markdown editor
+const MDEditor = dynamic(
+  () => import("@uiw/react-md-editor").then((mod) => mod.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[300px] w-full items-center justify-center rounded-md border bg-muted/20 text-sm text-muted-foreground">
+        Loading editor...
+      </div>
+    ),
+  },
+);
+
 export function Field({
   label,
   value,
-  onChange,
+  onChangeAction,
   rows = 2,
+  enableMarkdown = false,
 }: {
   label: string;
   value: string | null;
-  onChange: (v: string | null) => void;
+  onChangeAction: (v: string | null) => void;
   rows?: number;
+  enableMarkdown?: boolean;
 }) {
+  if (enableMarkdown) {
+    // Calculate height based on rows prop for consistency
+    const editorHeight = Math.max(400, rows * 100);
+
+    return (
+      <div className="space-y-2">
+        <Label>{label}</Label>
+        <div
+          className="markdown-editor-wrapper overflow-hidden rounded-md border border-input"
+          data-color-mode="light"
+        >
+          <MDEditor
+            value={value ?? ""}
+            onChange={(val) => onChangeAction(val || null)}
+            preview="live"
+            height={editorHeight}
+            minHeight={editorHeight}
+            visibleDragbar={false}
+            highlightEnable={false}
+            className="!border-0 !shadow-none"
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Supports Markdown: **bold**, *italic*, [links](url), lists, etc.
+        </p>
+      </div>
+    );
+  }
+
+  // Standard textarea for non-markdown fields
   return (
     <div className="space-y-2">
       <Label>{label}</Label>
       <Textarea
         rows={rows}
         value={value ?? ""}
-        onChange={(e) => onChange(e.target.value || null)}
+        onChange={(e) => onChangeAction(e.target.value || null)}
+        style={{ minHeight: `${Math.max(rows * 36 + 40, 100)}px` }}
       />
     </div>
   );
@@ -29,12 +78,12 @@ export function TagSelector({
   label,
   items,
   selected,
-  onToggle,
+  onToggleAction,
 }: {
   label: string;
   items: Taxonomy[];
   selected: string[];
-  onToggle: (id: string) => void;
+  onToggleAction: (id: string) => void;
 }) {
   return (
     <div className="space-y-2">
@@ -49,12 +98,11 @@ export function TagSelector({
             <button
               key={it.id}
               type="button"
-              onClick={() => onToggle(it.id)}
-              className={`border px-3 py-1 text-xs transition-colors ${
-                selected.includes(it.id)
+              onClick={() => onToggleAction(it.id)}
+              className={`border px-3 py-1 text-xs transition-colors ${selected.includes(it.id)
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border hover:bg-muted"
-              }`}
+                }`}
             >
               {it.name}
             </button>

@@ -1,4 +1,5 @@
 import type { Prisma } from "@generated/prisma/client";
+import { chunkArray } from "@/lib/async-utils";
 
 type RelationSyncInput = {
   categoryIds: string[];
@@ -8,12 +9,14 @@ type RelationSyncInput = {
   metrics: { label: string; value: string; unit: string | null }[];
 };
 
+const BULK_INSERT_CHUNK_SIZE = 100; // ✅ Prevent overwhelming the DB
+
 export async function syncCaseStudyRelations(
   tx: Prisma.TransactionClient,
   caseStudyId: string,
   input: RelationSyncInput,
 ): Promise<void> {
-  // Phase 1: Remove all existing relations in parallel (different tables, no FK conflicts)
+  // ✅ PHASE 1: Delete existing relations (parallel is safe for deletes)
   await Promise.all([
     tx.caseStudyCategory.deleteMany({ where: { caseStudyId } }),
     tx.caseStudyService.deleteMany({ where: { caseStudyId } }),
@@ -22,72 +25,91 @@ export async function syncCaseStudyRelations(
     tx.caseStudyBusinessModel.deleteMany({ where: { caseStudyId } }),
   ]);
 
-  // Phase 2: Create new relations in parallel
-  const creates: Promise<unknown>[] = [];
+  // ✅ PHASE 2: Insert new relations in chunks to avoid connection pool exhaustion
+  const insertOperations: Array<() => Promise<unknown>> = [];
 
-  if (input.categoryIds.length) {
-    creates.push(
-      tx.caseStudyCategory.createMany({
-        data: input.categoryIds.map((categoryId) => ({
-          caseStudyId,
-          categoryId,
-        })),
-        skipDuplicates: true,
-      }),
-    );
+  // Categories
+  if (input.categoryIds.length > 0) {
+    const chunks = chunkArray(input.categoryIds, BULK_INSERT_CHUNK_SIZE);
+    for (const chunk of chunks) {
+      insertOperations.push(() =>
+        tx.caseStudyCategory.createMany({
+          data: chunk.map((categoryId) => ({ caseStudyId, categoryId })),
+          skipDuplicates: true,
+        }),
+      );
+    }
   }
 
-  if (input.serviceIds.length) {
-    creates.push(
-      tx.caseStudyService.createMany({
-        data: input.serviceIds.map((serviceId) => ({
-          caseStudyId,
-          serviceId,
-        })),
-        skipDuplicates: true,
-      }),
-    );
+  // Services
+  if (input.serviceIds.length > 0) {
+    const chunks = chunkArray(input.serviceIds, BULK_INSERT_CHUNK_SIZE);
+    for (const chunk of chunks) {
+      insertOperations.push(() =>
+        tx.caseStudyService.createMany({
+          data: chunk.map((serviceId) => ({ caseStudyId, serviceId })),
+          skipDuplicates: true,
+        }),
+      );
+    }
   }
 
-  if (input.keyBusinessIds.length) {
-    creates.push(
-      tx.caseStudyKeyBusiness.createMany({
-        data: input.keyBusinessIds.map((keyBusinessId) => ({
-          caseStudyId,
-          keyBusinessId,
-        })),
-        skipDuplicates: true,
-      }),
-    );
+  // Key Businesses
+  if (input.keyBusinessIds.length > 0) {
+    const chunks = chunkArray(input.keyBusinessIds, BULK_INSERT_CHUNK_SIZE);
+    for (const chunk of chunks) {
+      insertOperations.push(() =>
+        tx.caseStudyKeyBusiness.createMany({
+          data: chunk.map((keyBusinessId) => ({ caseStudyId, keyBusinessId })),
+          skipDuplicates: true,
+        }),
+      );
+    }
   }
 
-  if (input.businessModelIds.length) {
-    creates.push(
-      tx.caseStudyBusinessModel.createMany({
-        data: input.businessModelIds.map((businessModelId) => ({
-          caseStudyId,
-          businessModelId,
-        })),
-        skipDuplicates: true,
-      }),
-    );
+  // Business Models
+  if (input.businessModelIds.length > 0) {
+    const chunks = chunkArray(input.businessModelIds, BULK_INSERT_CHUNK_SIZE);
+    for (const chunk of chunks) {
+      insertOperations.push(() =>
+        tx.caseStudyBusinessModel.createMany({
+          data: chunk.map((businessModelId) => ({
+            caseStudyId,
+            businessModelId,
+          })),
+          skipDuplicates: true,
+        }),
+      );
+    }
   }
 
-  if (input.metrics.length) {
-    creates.push(
-      tx.caseStudyMetric.createMany({
-        data: input.metrics.map((m, sortOrder) => ({
-          caseStudyId,
-          label: m.label,
-          value: m.value,
-          unit: m.unit ?? null,
-          sortOrder,
-        })),
-      }),
-    );
+  // Metrics (include sortOrder)
+  if (input.metrics.length > 0) {
+    const chunks = chunkArray(input.metrics, BULK_INSERT_CHUNK_SIZE);
+    for (const [chunkIndex, chunk] of chunks.entries()) {
+      insertOperations.push(() =>
+        tx.caseStudyMetric.createMany({
+          data: chunk.map((m, index) => ({
+            caseStudyId,
+            label: m.label,
+            value: m.value,
+            unit: m.unit ?? null,
+            sortOrder: chunkIndex * BULK_INSERT_CHUNK_SIZE + index,
+          })),
+        }),
+      );
+    }
   }
 
-  if (creates.length) {
-    await Promise.all(creates);
+  // ✅ Execute inserts sequentially (within transaction, concurrency is limited by Prisma)
+  // For true concurrency control across transactions, use runWithConcurrencyLimit
+  for (const operation of insertOperations) {
+    await operation();
   }
+
+  console.log(
+    `[syncCaseStudyRelations] Synced ${input.categoryIds.length} categories, ` +
+    `${input.serviceIds.length} services, ${input.keyBusinessIds.length} key businesses, ` +
+    `${input.businessModelIds.length} business models, ${input.metrics.length} metrics`,
+  );
 }

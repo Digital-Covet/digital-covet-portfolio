@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useCaseStudyForm } from "@/hooks/useCaseStudyForm";
+import { useCaseStudyForm } from "@/hooks/case-studies/useCaseStudyForm";
 import type { CaseStudyResponse, Taxonomies } from "@/types/case-studies";
 
 interface Props {
@@ -30,6 +30,7 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
     saving,
     lastSavedAt,
     isNew,
+    resolvedId,
     updateStory,
     updateTestimonial,
     toggleCategory,
@@ -42,6 +43,7 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
     addAttachment,
     removeAttachment,
     save,
+    saveAndReturnId,
     basicsHandlers,
     mediaHandlers,
   } = useCaseStudyForm({ id, initialData, taxonomies });
@@ -118,6 +120,10 @@ export function CaseStudyEditorShell({ id, initialData, taxonomies }: Props) {
         />
 
         <MediaSection
+          caseStudyId={resolvedId || id}
+          isNew={isNew}
+          onSaveAndReturnId={saveAndReturnId}
+          onSaveAfterUpload={save}
           heroImageUrl={form.media.heroImageUrl}
           galleryUrls={form.media.galleryUrls}
           attachments={form.media.attachments}

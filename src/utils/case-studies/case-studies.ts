@@ -1,11 +1,4 @@
-import { z } from "zod";
-
-import { attachmentSchema } from "@/schemas/content";
-import type {
-  CaseStudyForm,
-  CaseStudyResponse,
-  Metric,
-} from "@/types/case-studies";
+import type { CaseStudyForm, Metric } from "@/types/case-studies";
 
 export function updateAtIndex<T>(
   arr: T[],
@@ -32,7 +25,7 @@ export function slugify(s: string): string {
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
+    .replace(/^-+|-+$/g, ""); // ✅ Remove leading/trailing hyphens
 }
 
 export function createEmptyForm(): CaseStudyForm {
@@ -71,62 +64,14 @@ export function createEmptyForm(): CaseStudyForm {
   };
 }
 
-export function mapDbToForm(db: CaseStudyResponse): CaseStudyForm {
-  const { study } = db;
-
-  const parsedAttachments = z
-    .array(attachmentSchema)
-    .safeParse(study.attachmentUrls);
-
-  return {
-    basics: {
-      id: study.id,
-      title: study.title,
-      slug: study.slug,
-      clientId: study.clientId,
-      sectorId:
-        study.caseStudyKeyBusinesses[0]?.keyBusiness?.industry?.sectorId ??
-        null,
-      industryId:
-        study.caseStudyKeyBusinesses[0]?.keyBusiness?.industryId ?? null,
-      keyBusinessIds: study.caseStudyKeyBusinesses.map((k) => k.keyBusinessId),
-      businessModelIds: db.businessModelIds,
-
-      projectDate: study.projectDate
-        ? study.projectDate.toISOString().split("T")[0]!
-        : null,
-      status: study.status as "draft" | "published" | "archived",
-    },
-    media: {
-      heroImageUrl: study.heroImageUrl,
-      galleryUrls: study.galleryUrls ?? [],
-      videoEmbedUrl: study.videoEmbedUrl,
-      attachments: parsedAttachments.success ? parsedAttachments.data : [],
-    },
-    story: {
-      description: study.description,
-      challenge: study.challenge,
-      solution: study.solution,
-      results: study.results,
-    },
-    testimonial: {
-      quote: study.testimonialQuote,
-      author: study.testimonialAuthor,
-      title: study.testimonialTitle,
-    },
-
-    categoryIds: db.categoryIds,
-    serviceIds: db.serviceIds,
-    metrics: db.metrics,
-  };
-}
-
 export function buildSavePayload(form: CaseStudyForm) {
   return {
     id: form.basics.id,
     title: form.basics.title.trim(),
-
-    slug: form.basics.slug || slugify(form.basics.title),
+    slug: (form.basics.slug || slugify(form.basics.title)).replace(
+      /^-|-$/g,
+      "",
+    ),
     clientId: form.basics.clientId,
     keyBusinessIds: form.basics.keyBusinessIds,
     businessModelIds: form.basics.businessModelIds,
@@ -145,7 +90,6 @@ export function buildSavePayload(form: CaseStudyForm) {
     status: form.basics.status,
     categoryIds: form.categoryIds,
     serviceIds: form.serviceIds,
-
     metrics: form.metrics.filter((m): m is Metric =>
       Boolean(m.label && m.value),
     ),
@@ -153,3 +97,6 @@ export function buildSavePayload(form: CaseStudyForm) {
     typeof import("@/actions/case-studies").upsertCaseStudy
   >[0];
 }
+
+// ✅ Re-export from dedicated mapping module
+export { mapDbToForm } from "./case-studies-mapping";

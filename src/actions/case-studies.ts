@@ -10,6 +10,7 @@ import {
   runAction,
 } from "@/lib/action-result";
 import { requireRole } from "@/lib/auth.server";
+import { deleteR2File, extractR2KeyFromProxyUrl } from "@/lib/r2";
 import { buildCreatedByFilter } from "@/lib/rbac";
 import { type CaseStudyInput, caseStudyInputSchema } from "@/schemas/content";
 import { uuidSchema } from "@/schemas/primitives/uuid";
@@ -222,6 +223,21 @@ export async function getCaseStudy(input: {
   });
 }
 
+export async function deleteMediaFile(input: {
+  url: string;
+}): Promise<ActionResult<{ success: boolean }>> {
+  return runAction(async () => {
+    await requireRole("employee");
+    const { url } = z.object({ url: z.string() }).parse(input);
+    const key = extractR2KeyFromProxyUrl(url);
+    if (!key) {
+      throw new ActionException("INVALID_URL", "Could not extract R2 key from URL");
+    }
+    await deleteR2File(key);
+    return ok({ success: true });
+  });
+}
+
 export async function deleteCaseStudy(input: {
   id: string;
 }): Promise<ActionResult<{ success: boolean }>> {
@@ -230,12 +246,55 @@ export async function deleteCaseStudy(input: {
     const { id } = z.object({ id: uuidSchema }).parse(input);
     const rbacFilter = await buildCreatedByFilter(user, getDeptUserIds);
     const whereClause = rbacFilter ? { id, ...rbacFilter } : { id };
-    const deleted = await prisma.caseStudy.deleteMany({
+
+    const study = await prisma.caseStudy.findFirst({
       where: whereClause,
+      select: {
+        heroImageUrl: true,
+        galleryUrls: true,
+        attachmentUrls: true,
+      },
     });
-    if (!deleted.count) {
+    if (!study) {
       throw new ActionException("NOT_FOUND", "Not found");
     }
+
+    const keysToDelete: string[] = [];
+
+    if (study.heroImageUrl) {
+      const key = extractR2KeyFromProxyUrl(study.heroImageUrl);
+      if (key) keysToDelete.push(key);
+    }
+
+    for (const url of study.galleryUrls) {
+      const key = extractR2KeyFromProxyUrl(url);
+      if (key) keysToDelete.push(key);
+    }
+
+    if (study.attachmentUrls) {
+      const attachments = study.attachmentUrls as Array<{
+        name: string;
+        url: string;
+      }>;
+      for (const attachment of attachments) {
+        const key = extractR2KeyFromProxyUrl(attachment.url);
+        if (key) keysToDelete.push(key);
+      }
+    }
+
+    const results = await Promise.allSettled(
+      keysToDelete.map((key) => deleteR2File(key)),
+    );
+    for (const r of results) {
+      if (r.status === "rejected") {
+        console.error("deleteCaseStudy: R2 deletion failed:", r.reason);
+      }
+    }
+
+    await prisma.caseStudy.deleteMany({
+      where: whereClause,
+    });
+
     revalidatePath("/case-studies");
     revalidatePath("/dashboard");
     revalidatePath("/shares/new");

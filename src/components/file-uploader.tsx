@@ -1,10 +1,9 @@
+"use client";
+
 import { UploadSimpleIcon, XIcon } from "@phosphor-icons/react";
-import { useRef, useTransition } from "react";
-import { toast } from "sonner";
-import { getUploadPresignedUrl } from "@/actions/files";
-import type { ImageRequirement } from "@/utils/image-validation";
-import { validateImage } from "@/utils/image-validation";
 import { Button } from "@/components/ui/button";
+import { useFileUpload } from "@/hooks/useFileUpload";
+import type { ImageRequirement } from "@/utils/image-validation";
 
 type Bucket = "client-logos" | "case-study-media" | "case-study-attachments";
 
@@ -12,122 +11,76 @@ export function FileUploader({
   bucket,
   accept,
   label = "Upload",
-  onUploaded,
+  onUploadedAction,
   imageRequirement,
   hint,
   multiple,
   maxFiles,
+  caseStudyId,
+  isNew,
+  onSaveAndReturnIdAction,
+  onSaveAfterUploadAction,
 }: {
   bucket: Bucket;
   accept?: string;
   label?: string;
-  onUploaded: (file: { url: string; name: string }) => void;
+  onUploadedAction: (file: { url: string; name: string }) => void;
   imageRequirement?: ImageRequirement;
   hint?: string;
   multiple?: boolean;
   maxFiles?: number;
+  caseStudyId?: string;
+  isNew?: boolean;
+  onSaveAndReturnIdAction?: () => Promise<{ ok: boolean; id?: string }>;
+  onSaveAfterUploadAction?: () => Promise<{ ok: boolean }>;
 }) {
-  const [isPending, startTransition] = useTransition();
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  async function handleFiles(files: FileList | null) {
-    if (!files || files.length === 0) return;
-
-    if (maxFiles && files.length > maxFiles) {
-      toast.error(`Maximum ${maxFiles} files allowed`);
-      return;
-    }
-
-    const fileArray = multiple ? Array.from(files) : [files[0]];
-
-    for (const file of fileArray) {
-      if (file.size > 15 * 1024 * 1024) {
-        toast.error(`${file.name}: File too large (max 15MB)`);
-        continue;
-      }
-
-      if (imageRequirement) {
-        const result = await validateImage(file, imageRequirement);
-        if (!result.valid) {
-          toast.error(`${file.name}: ${result.error}`);
-          continue;
-        }
-      }
-
-      const contentType = file.type || "application/octet-stream";
-
-      startTransition(async () => {
-        try {
-          const res = await getUploadPresignedUrl({
-            bucket,
-            filename: file.name,
-            contentType,
-          });
-
-          if (!res.ok) {
-            toast.error(res.error.message);
-            return;
-          }
-
-          const uploadRes = await fetch(res.data.presignedUrl, {
-            method: "PUT",
-            body: file,
-            headers: {
-              "Content-Type": contentType,
-            },
-          });
-
-          if (!uploadRes.ok) {
-            const detail = await uploadRes.text().catch(() => "");
-            console.error("R2 upload failed:", uploadRes.status, detail);
-            toast.error("Upload to storage failed");
-            return;
-          }
-
-          onUploaded({ url: res.data.proxyUrl, name: file.name });
-          toast.success("Uploaded");
-        } catch (err) {
-          toast.error(err instanceof Error ? err.message : "Upload failed");
-        }
-      });
-    }
-  }
+  const { inputRef, isUploading, openFilePicker, handleInputChange } =
+    useFileUpload({
+      bucket,
+      accept,
+      imageRequirement,
+      multiple,
+      maxFiles,
+      onUploadedAction,
+      caseStudyId,
+      isNew,
+      onSaveAndReturnIdAction,
+      onSaveAfterUploadAction,
+    });
 
   return (
-    <>
+    <div className="relative">
       <input
         ref={inputRef}
         type="file"
         className="sr-only peer"
         accept={accept}
         multiple={multiple}
-        onChange={(e) => handleFiles(e.target.files)}
-        disabled={isPending}
+        onChange={handleInputChange}
+        disabled={isUploading}
       />
       <Button
         type="button"
         variant="outline"
         size="sm"
-        disabled={isPending}
+        disabled={isUploading}
         className="cursor-pointer"
-        onClick={() => inputRef.current?.click()}
+        onClick={openFilePicker}
       >
         <UploadSimpleIcon size={16} className="mr-2" />
-        {isPending ? "Uploading…" : label}
+        {isUploading ? "Uploading…" : label}
       </Button>
-      {hint && (
-        <p className="text-xs text-muted-foreground">{hint}</p>
-      )}
-    </>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
   );
 }
 
 export function ImagePreview({
   url,
-  onRemove,
+  onRemoveAction,
 }: {
   url: string;
-  onRemove?: () => void;
+  onRemoveAction?: () => void;
 }) {
   return (
     <div className="group relative inline-block">
@@ -136,10 +89,10 @@ export function ImagePreview({
         alt=""
         className="h-24 w-24 rounded-md border object-cover"
       />
-      {onRemove && (
+      {onRemoveAction && (
         <button
           type="button"
-          onClick={onRemove}
+          onClick={onRemoveAction}
           className="absolute -right-2 -top-2 rounded-full bg-destructive p-1 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
         >
           <XIcon size={16} />

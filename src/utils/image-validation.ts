@@ -37,15 +37,25 @@ export async function validateImage(
     }
   }
 
+  // Skip pixel-dimension checks for SVGs — they're vector graphics
+  if (file.type === "image/svg+xml") {
+    return { valid: true };
+  }
+
   const dimensions = await getImageDimensions(file);
 
   if (requirement.aspectRatio) {
     const [rw, rh] = requirement.aspectRatio.split(":").map(Number);
-    if (rw && rh && dimensions.width * rh !== dimensions.height * rw) {
-      return {
-        valid: false,
-        error: `Invalid aspect ratio. Required: ${requirement.aspectRatio}`,
-      };
+    if (rw && rh) {
+      const imageRatio = dimensions.width / dimensions.height;
+      const requiredRatio = rw / rh;
+      const tolerance = 0.015;
+      if (Math.abs(imageRatio - requiredRatio) > tolerance) {
+        return {
+          valid: false,
+          error: `Invalid aspect ratio. Required: ${requirement.aspectRatio}`,
+        };
+      }
     }
   }
 
@@ -68,14 +78,18 @@ export async function validateImage(
 export async function getImageDimensions(
   file: File,
 ): Promise<{ width: number; height: number }> {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
+    const cleanup = () => URL.revokeObjectURL(url);
     img.onload = () => {
-      URL.revokeObjectURL(url);
+      cleanup();
       resolve({ width: img.naturalWidth, height: img.naturalHeight });
     };
-    img.onerror = reject;
+    img.onerror = () => {
+      cleanup();
+      resolve({ width: 0, height: 0 });
+    };
     img.src = url;
   });
 }
@@ -93,3 +107,4 @@ export const HERO_IMAGE_REQUIREMENTS: ImageRequirement = {
   allowedFormats: ["jpg", "jpeg"],
   aspectRatio: "415:147",
 };
+

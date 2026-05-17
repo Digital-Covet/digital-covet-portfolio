@@ -24,10 +24,10 @@ import type { Taxonomies } from "@/types/case-studies";
 type EditingClient =
   | Taxonomies["clients"][number]
   | {
-      id?: string;
-      name: string;
-      logoUrl: string | null;
-    };
+    id?: string;
+    name: string;
+    logoUrl: string | null;
+  };
 
 export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
   const router = useRouter();
@@ -109,7 +109,9 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
                 {editing.logoUrl && (
                   <ImagePreview
                     url={editing.logoUrl}
-                    onRemove={() => setEditing({ ...editing, logoUrl: null })}
+                    onRemoveAction={() =>
+                      setEditing({ ...editing, logoUrl: null })
+                    }
                   />
                 )}
                 <FileUploader
@@ -118,7 +120,9 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
                   label="Upload logo"
                   imageRequirement={LOGO_REQUIREMENTS}
                   hint="Min 512×512px, 1:1 ratio, PNG/JPG/WEBP/SVG"
-                  onUploaded={(f) => setEditing({ ...editing, logoUrl: f.url })}
+                  onUploadedAction={(f) =>
+                    setEditing({ ...editing, logoUrl: f.url })
+                  }
                 />
               </div>
             </div>

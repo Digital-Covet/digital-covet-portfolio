@@ -10,6 +10,7 @@ import {
   runAction,
 } from "@/lib/action-result";
 import { requireRole } from "@/lib/auth.server";
+import { deleteR2File, extractR2KeyFromProxyUrl } from "@/lib/r2";
 import { type ClientInput, clientInputSchema } from "@/schemas/client";
 import { uuidSchema } from "@/schemas/primitives/uuid";
 
@@ -64,6 +65,25 @@ export async function deleteClient(input: {
         "CONFLICT",
         `Cannot delete: ${caseStudyCount} case study${caseStudyCount > 1 ? "ies" : "y"} reference${caseStudyCount > 1 ? "" : "s"} this client. Remove the client from them first.`,
       );
+    }
+
+    const client = await prisma.client.findUnique({
+      where: { id },
+      select: { logoUrl: true },
+    });
+    if (!client) {
+      throw new ActionException("NOT_FOUND", "Not found");
+    }
+
+    if (client.logoUrl) {
+      const key = extractR2KeyFromProxyUrl(client.logoUrl);
+      if (key) {
+        try {
+          await deleteR2File(key);
+        } catch (e) {
+          console.error("deleteClient: R2 deletion failed:", e);
+        }
+      }
     }
 
     await prisma.client.delete({ where: { id } });

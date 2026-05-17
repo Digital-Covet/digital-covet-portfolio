@@ -1,7 +1,8 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-
+@import "@uiw/react-md-editor/markdown-editor.css";
+@import "@uiw/react-markdown-preview/markdown.css";
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -157,5 +158,87 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+  .markdown-editor-wrapper .w-md-editor {
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .markdown-editor-wrapper .w-md-editor-toolbar {
+    background-color: hsl(var(--muted)) !important;
+    border-bottom: 1px solid hsl(var(--border)) !important;
+    padding: 8px !important;
+  }
+
+  .markdown-editor-wrapper .w-md-editor-content {
+    background-color: hsl(var(--background)) !important;
+  }
+
+  .markdown-editor-wrapper .w-md-editor-text,
+  .markdown-editor-wrapper .w-md-editor-text-pre {
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+  }
+
+  .markdown-editor-wrapper .w-md-editor-text ul,
+  .markdown-editor-wrapper .w-md-editor-text ol {
+    list-style-type: disc !important;
+    padding-left: 20px !important;
+  }
+
+  .markdown-editor-wrapper .w-md-editor-text ol {
+    list-style-type: decimal !important;
+  }
+
+  .markdown-editor-wrapper .w-md-editor-preview {
+    background-color: hsl(var(--background)) !important;
+    color: hsl(var(--foreground)) !important;
+    padding: 16px !important;
+  }
+
+  .markdown-editor-wrapper .w-md-editor-preview ul,
+  .markdown-editor-wrapper .w-md-editor-preview ol {
+    list-style-type: disc !important;
+    padding-left: 20px !important;
+  }
+
+  .markdown-editor-wrapper .w-md-editor-preview ol {
+    list-style-type: decimal !important;
+  }
+
+  .markdown-editor-wrapper .wmde-markdown {
+    background-color: transparent !important;
+    color: hsl(var(--foreground)) !important;
+    font-size: 14px !important;
+  }
+
+  .markdown-editor-wrapper .wmde-markdown h1,
+  .markdown-editor-wrapper .wmde-markdown h2,
+  .markdown-editor-wrapper .wmde-markdown h3 {
+    color: hsl(var(--foreground)) !important;
+    border-bottom-color: hsl(var(--border)) !important;
+  }
+
+  .markdown-editor-wrapper .wmde-markdown code {
+    background-color: hsl(var(--muted)) !important;
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .markdown-editor-wrapper .wmde-markdown pre {
+    background-color: hsl(var(--muted)) !important;
+  }
+
+  .markdown-editor-wrapper .wmde-markdown a {
+    color: hsl(var(--primary)) !important;
+  }
+
+  .markdown-editor-wrapper .w-md-editor-toolbar button {
+    color: hsl(var(--foreground)) !important;
+  }
+
+  .markdown-editor-wrapper .w-md-editor-toolbar button:hover {
+    background-color: hsl(var(--accent)) !important;
   }
 }

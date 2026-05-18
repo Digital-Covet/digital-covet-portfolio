@@ -4,8 +4,10 @@ import dynamic from "next/dynamic";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { Taxonomy } from "@/types/case-studies";
+import "katex/dist/katex.min.css";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
 
-// Dynamic import to avoid SSR issues with the Markdown editor
 const MDEditor = dynamic(
   () => import("@uiw/react-md-editor").then((mod) => mod.default),
   {
@@ -17,6 +19,11 @@ const MDEditor = dynamic(
     ),
   },
 );
+
+const markdownPreviewOptions = {
+  remarkPlugins: [remarkMath],
+  rehypePlugins: [rehypeKatex],
+};
 
 export function Field({
   label,
@@ -51,10 +58,12 @@ export function Field({
             visibleDragbar={false}
             highlightEnable={false}
             className="!border-0 !shadow-none"
+            previewOptions={markdownPreviewOptions}
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Supports Markdown: **bold**, *italic*, [links](url), lists, etc.
+          Supports Markdown: **bold**, *italic*, [links](url), lists, $inline
+          math$, $$block math$$
         </p>
       </div>
     );
@@ -99,10 +108,11 @@ export function TagSelector({
               key={it.id}
               type="button"
               onClick={() => onToggleAction(it.id)}
-              className={`border px-3 py-1 text-xs transition-colors ${selected.includes(it.id)
+              className={`border px-3 py-1 text-xs transition-colors ${
+                selected.includes(it.id)
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border hover:bg-muted"
-                }`}
+              }`}
             >
               {it.name}
             </button>

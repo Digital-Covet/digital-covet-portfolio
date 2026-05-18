@@ -123,7 +123,7 @@ export function SharesList({ initialShares }: SharesListProps) {
         ))}
 
         {initialShares.length === 0 && (
-          <div className="rounded-md border border-dashed py-12 text-center text-sm text-muted-foreground">
+          <div className="border border-dashed py-12 text-center text-sm text-muted-foreground">
             No shares yet. Create your first share link to get started.
           </div>
         )}

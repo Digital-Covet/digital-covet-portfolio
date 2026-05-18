@@ -9,8 +9,11 @@ import {
   ArrowClockwiseIcon,
   ArrowLeftIcon,
   ArrowSquareOutIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
   FileArrowDownIcon,
   LockIcon,
+  XIcon,
 } from "@phosphor-icons/react";
 import { use, useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -18,6 +21,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type {
@@ -50,14 +54,14 @@ export default function SharePage({
   useEffect(() => {
     getShareInfo(token)
       .then(setInfo)
-      .catch(() => {});
+      .catch(() => { });
   }, [token]);
 
   useEffect(() => {
     if (info && info.exists && info.unlocked && info.status === "ok") {
       getShareContent(token)
         .then(setContent)
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [info, token]);
 
@@ -193,7 +197,7 @@ export default function SharePage({
               key={s.id}
               type="button"
               onClick={() => setSelected(s)}
-              className="group overflow-hidden rounded-lg border bg-card text-left transition-shadow hover:shadow-lg"
+              className="group cursor-pointer overflow-hidden border bg-card text-left transition-shadow hover:shadow-lg"
             >
               {s.heroImageUrl ? (
                 <img
@@ -225,7 +229,7 @@ export default function SharePage({
         </div>
 
         {content.studies.length === 0 && (
-          <div className="rounded-md border border-dashed py-16 text-center text-sm text-muted-foreground">
+          <div className="border border-dashed py-16 text-center text-sm text-muted-foreground">
             No case studies match this share.
           </div>
         )}
@@ -243,7 +247,23 @@ function CaseStudyDetail({
   metrics: SerializedMetric[];
   onBack: () => void;
 }) {
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
   const attachments = (study.attachmentUrls as Attachment[] | null) ?? [];
+
+  useEffect(() => {
+    if (galleryIndex === null || !study.galleryUrls) return;
+    const urls = study.galleryUrls;
+    const current = galleryIndex;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "ArrowLeft") {
+        setGalleryIndex((current - 1 + urls.length) % urls.length);
+      } else if (e.key === "ArrowRight") {
+        setGalleryIndex((current + 1) % urls.length);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [galleryIndex, study.galleryUrls]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -290,7 +310,14 @@ function CaseStudyDetail({
 
         {study.description && (
           <div className="[&_ul]:list-disc [&_ol]:list-decimal [&_li]:marker:text-foreground [&_ul]:ps-6 [&_ol]:ps-6 mt-6">
-            <div className="share-markdown"><ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{study.description}</ReactMarkdown></div>
+            <div className="share-markdown">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+              >
+                {study.description}
+              </ReactMarkdown>
+            </div>
           </div>
         )}
 
@@ -330,7 +357,7 @@ function CaseStudyDetail({
 
         {}
         {study.videoEmbedUrl && (
-          <div className="mt-10 aspect-video overflow-hidden rounded-lg border">
+          <div className="mt-10 aspect-video overflow-hidden border">
             <iframe
               src={toEmbed(study.videoEmbedUrl)}
               className="h-full w-full"
@@ -349,14 +376,79 @@ function CaseStudyDetail({
             </h2>
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               {study.galleryUrls.map((u: string, i: number) => (
-                <img
+                <button
                   key={i}
-                  src={u}
-                  alt=""
-                  className="rounded-lg border object-cover"
-                />
+                  type="button"
+                  onClick={() => setGalleryIndex(i)}
+                  className="cursor-zoom-in overflow-hidden rounded-lg border transition-shadow hover:shadow-lg"
+                >
+                  <img src={u} alt="" className="w-full object-cover" />
+                </button>
               ))}
             </div>
+
+            <Dialog
+              open={galleryIndex !== null}
+              onOpenChange={(open) => {
+                if (!open) setGalleryIndex(null);
+              }}
+            >
+              <DialogContent
+                showCloseButton={false}
+                className="max-w-[95vw] border-0 bg-black/40 p-0 text-white sm:max-w-[95vw]"
+              >
+                {galleryIndex !== null && (
+                  <div className="relative flex items-center justify-center">
+                    <img
+                      src={study.galleryUrls[galleryIndex]}
+                      alt=""
+                      className="max-h-[90vh] max-w-full object-contain"
+                    />
+                    {study.galleryUrls.length > 1 && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setGalleryIndex(
+                              (galleryIndex - 1 + study.galleryUrls.length) %
+                              study.galleryUrls.length,
+                            );
+                          }}
+                          className="absolute left-2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                        >
+                          <CaretLeftIcon size={20} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setGalleryIndex(
+                              (galleryIndex + 1) % study.galleryUrls.length,
+                            );
+                          }}
+                          className="absolute right-2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                        >
+                          <CaretRightIcon size={20} />
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setGalleryIndex(null)}
+                      className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                    >
+                      <XIcon size={16} />
+                    </button>
+                    {study.galleryUrls.length > 1 && (
+                      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/10 px-3 py-1 text-xs text-white">
+                        {galleryIndex + 1} / {study.galleryUrls.length}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </DialogContent>
+            </Dialog>
           </div>
         )}
 
@@ -411,9 +503,16 @@ function ContentSection({ title, body }: { title: string; body: string }) {
       <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
         {title}
       </h2>
-        <div className="[&_ul]:list-disc [&_ol]:list-decimal [&_li]:marker:text-foreground [&_ul]:ps-6 [&_ol]:ps-6 mt-2">
-          <div className="share-markdown"><ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{body}</ReactMarkdown></div>
+      <div className="[&_ul]:list-disc [&_ol]:list-decimal [&_li]:marker:text-foreground [&_ul]:ps-6 [&_ol]:ps-6 mt-2">
+        <div className="share-markdown">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm, remarkMath]}
+            rehypePlugins={[rehypeKatex]}
+          >
+            {body}
+          </ReactMarkdown>
         </div>
+      </div>
     </div>
   );
 }
@@ -431,6 +530,6 @@ function toEmbed(url: string): string {
     if (u.hostname.includes("vimeo.com")) {
       return `https://player.vimeo.com/video${u.pathname}`;
     }
-  } catch {}
+  } catch { }
   return url;
 }

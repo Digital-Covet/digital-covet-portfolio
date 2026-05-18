@@ -297,7 +297,10 @@ function transformStudyMedia(study: SerializedStudy): SerializedStudy {
   const urls = study.attachmentUrls;
   let transformedUrls: unknown = null;
   if (Array.isArray(urls)) {
-    transformedUrls = urls.map((u: string) => toPublicUrl(u));
+    transformedUrls = urls.map((a: unknown) => {
+      const att = a as { name: string; url: string } | null;
+      return att ? { ...att, url: toPublicUrl(att.url) } : att;
+    });
   }
   return {
     ...study,

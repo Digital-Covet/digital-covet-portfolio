@@ -14,6 +14,7 @@ export const ROUTES = {
   VERIFY_2FA: "/auth/verify-2fa",
   DASHBOARD: "/dashboard",
   TEST_INVITE: "/test-invite",
+  SHARES: "/shares",
 } as const;
 
 export const ROLES = {

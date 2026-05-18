@@ -13,8 +13,13 @@ const PUBLIC_ROUTES: AppRoute[] = [
   ROUTES.TEST_INVITE,
 ];
 
+const PUBLIC_SHARE_TOKEN_PATTERN = /^\/shares\/[a-f0-9-]{36}$/;
+
 function isPublicRoute(pathname: string): boolean {
-  return PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+  return (
+    PUBLIC_ROUTES.some((route) => pathname.startsWith(route)) ||
+    PUBLIC_SHARE_TOKEN_PATTERN.test(pathname)
+  );
 }
 
 function shouldPassthrough(pathname: string): boolean {

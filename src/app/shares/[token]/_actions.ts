@@ -165,7 +165,10 @@ export async function unlockShare(token: string, password: string) {
   } else if (!validated.data.password) {
     throw new Error("Password required");
   } else {
-    const ok = await verifyPassword(validated.data.password, share.passwordHash);
+    const ok = await verifyPassword(
+      validated.data.password,
+      share.passwordHash,
+    );
     if (!ok) throw new Error("Incorrect password");
   }
 

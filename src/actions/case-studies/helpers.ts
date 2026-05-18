@@ -109,7 +109,7 @@ export async function syncCaseStudyRelations(
 
   console.log(
     `[syncCaseStudyRelations] Synced ${input.categoryIds.length} categories, ` +
-    `${input.serviceIds.length} services, ${input.keyBusinessIds.length} key businesses, ` +
-    `${input.businessModelIds.length} business models, ${input.metrics.length} metrics`,
+      `${input.serviceIds.length} services, ${input.keyBusinessIds.length} key businesses, ` +
+      `${input.businessModelIds.length} business models, ${input.metrics.length} metrics`,
   );
 }

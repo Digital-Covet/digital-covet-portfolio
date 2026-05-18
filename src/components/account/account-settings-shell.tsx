@@ -30,7 +30,10 @@ export function AccountSettingsShell({ user }: AccountSettingsShellProps) {
 
       <CardContent className="space-y-10">
         <section className="space-y-8">
-          <AvatarUpload userName={user.name} currentImage={user.image ?? null} />
+          <AvatarUpload
+            userName={user.name}
+            currentImage={user.image ?? null}
+          />
 
           <Separator />
 

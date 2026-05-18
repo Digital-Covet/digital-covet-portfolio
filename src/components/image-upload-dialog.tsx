@@ -176,7 +176,10 @@ export function ImageUploadDialog({
         }
       ></DialogTrigger>
 
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-hidden" initialFocus={false}>
+      <DialogContent
+        className="sm:max-w-2xl max-h-[85vh] overflow-hidden"
+        initialFocus={false}
+      >
         <div
           ref={dialogBodyRef}
           tabIndex={-1}

@@ -17,7 +17,7 @@ export function nodeStreamToWebStream(
   ) {
     throw new TypeError(
       "nodeStreamToWebStream received a web ReadableStream, not a Node.js Readable. " +
-      "For AWS SDK v3 Body, use body.transformToWebStream() instead.",
+        "For AWS SDK v3 Body, use body.transformToWebStream() instead.",
     );
   }
 

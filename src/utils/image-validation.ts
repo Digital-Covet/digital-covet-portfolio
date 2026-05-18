@@ -107,4 +107,3 @@ export const HERO_IMAGE_REQUIREMENTS: ImageRequirement = {
   allowedFormats: ["jpg", "jpeg"],
   aspectRatio: "415:147",
 };
-

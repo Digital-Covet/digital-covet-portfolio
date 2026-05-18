@@ -68,8 +68,8 @@ export async function GET(request: NextRequest) {
         "X-Content-Type-Options": "nosniff",
         ...(metadata.bucket === "case-study-attachments"
           ? {
-            "Content-Disposition": `attachment; filename="${metadata.filename}"`,
-          }
+              "Content-Disposition": `attachment; filename="${metadata.filename}"`,
+            }
           : {}),
       },
     });

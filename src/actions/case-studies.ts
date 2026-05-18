@@ -62,14 +62,38 @@ export async function upsertCaseStudy(
 
       if (id) {
         const whereClause = rbacFilter ? { id, ...rbacFilter } : { id };
-        const updated = await tx.caseStudy.updateMany({
+        const existing = await tx.caseStudy.findFirst({
+          where: whereClause,
+          select: { id: true },
+        });
+        if (!existing) {
+          throw new ActionException("NOT_FOUND", "Not found");
+        }
+        const duplicateSlug = await tx.caseStudy.findFirst({
+          where: { slug: data.slug, NOT: { id } },
+          select: { id: true },
+        });
+        if (duplicateSlug) {
+          throw new ActionException(
+            "DUPLICATE_SLUG",
+            `A case study with slug "${data.slug}" already exists`,
+          );
+        }
+        await tx.caseStudy.updateMany({
           where: whereClause,
           data: dbPayload,
         });
-        if (!updated.count) {
-          throw new ActionException("NOT_FOUND", "Not found");
-        }
       } else {
+        const duplicateSlug = await tx.caseStudy.findFirst({
+          where: { slug: data.slug },
+          select: { id: true },
+        });
+        if (duplicateSlug) {
+          throw new ActionException(
+            "DUPLICATE_SLUG",
+            `A case study with slug "${data.slug}" already exists`,
+          );
+        }
         const row = await tx.caseStudy.create({
           data: { ...dbPayload, createdBy: user.id },
           select: { id: true },
@@ -208,7 +232,9 @@ export async function getCaseStudy(input: {
       caseStudyBusinessModels,
       ...studyData
     } = study;
-    const businessModelIds = caseStudyBusinessModels.map((b) => b.businessModelId);
+    const businessModelIds = caseStudyBusinessModels.map(
+      (b) => b.businessModelId,
+    );
     return ok({
       study: studyData,
       categoryIds: caseStudyCategories.map((c) => c.categoryId),
@@ -231,7 +257,10 @@ export async function deleteMediaFile(input: {
     const { url } = z.object({ url: z.string() }).parse(input);
     const key = extractR2KeyFromProxyUrl(url);
     if (!key) {
-      throw new ActionException("INVALID_URL", "Could not extract R2 key from URL");
+      throw new ActionException(
+        "INVALID_URL",
+        "Could not extract R2 key from URL",
+      );
     }
     await deleteR2File(key);
     return ok({ success: true });

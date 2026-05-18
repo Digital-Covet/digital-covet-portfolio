@@ -45,7 +45,11 @@ export const caseStudyInputSchema = z.object({
   solution: z.string().max(10000).nullable().optional(),
   results: z.string().max(10000).nullable().optional(),
   testimonialQuote: z.string().max(2000).nullable().optional(),
-  testimonialAuthor: z.string().max(100).nullable().optional(),
+  testimonialAuthor: z
+    .string()
+    .max(250, "Author name must be 250 characters or less")
+    .nullable()
+    .optional(),
   testimonialTitle: z.string().max(100).nullable().optional(),
   status: z.enum(["draft", "published", "archived"]),
   categoryIds: z.array(uuidSchema).max(50).default([]),

@@ -294,10 +294,16 @@ export async function getShareContent(token: string): Promise<ShareContent> {
 }
 
 function transformStudyMedia(study: SerializedStudy): SerializedStudy {
+  const urls = study.attachmentUrls;
+  let transformedUrls: unknown = null;
+  if (Array.isArray(urls)) {
+    transformedUrls = urls.map((u: string) => toPublicUrl(u));
+  }
   return {
     ...study,
     heroImageUrl: study.heroImageUrl ? toPublicUrl(study.heroImageUrl) : null,
     galleryUrls: study.galleryUrls.map(toPublicUrl),
+    attachmentUrls: transformedUrls,
     client: study.client
       ? {
           ...study.client,

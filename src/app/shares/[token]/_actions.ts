@@ -285,7 +285,32 @@ export async function getShareContent(token: string): Promise<ShareContent> {
     });
   }
 
-  const serializedStudies: SerializedStudy[] = studies.map((s) => ({
+  function toPublicUrl(proxyUrl: string): string {
+  const u = new URL(proxyUrl, "http://placeholder");
+  if (u.pathname === "/api/file" || u.pathname.endsWith("/api/file")) {
+    u.pathname = "/api/public/file";
+  }
+  return u.toString().replace("http://placeholder", "");
+}
+
+function transformStudyMedia(study: SerializedStudy): SerializedStudy {
+  return {
+    ...study,
+    heroImageUrl: study.heroImageUrl ? toPublicUrl(study.heroImageUrl) : null,
+    galleryUrls: study.galleryUrls.map(toPublicUrl),
+    client: study.client
+      ? {
+          ...study.client,
+          logoUrl: study.client.logoUrl
+            ? toPublicUrl(study.client.logoUrl)
+            : null,
+        }
+      : null,
+  };
+}
+
+const serializedStudies: SerializedStudy[] = studies.map((s) => {
+  const raw: SerializedStudy = {
     id: s.id,
     title: s.title,
     description: s.description,
@@ -308,7 +333,9 @@ export async function getShareContent(token: string): Promise<ShareContent> {
       ? { name: s.client.name, logoUrl: s.client.logoUrl }
       : null,
     keyBusinesses: s.caseStudyKeyBusinesses.map((k) => k.keyBusiness),
-  }));
+  };
+  return transformStudyMedia(raw);
+});
 
   const serializedMetrics: SerializedMetric[] = metrics.map((m) => ({
     id: m.id,

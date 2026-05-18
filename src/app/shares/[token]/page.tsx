@@ -1,5 +1,10 @@
 "use client";
 
+import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
+import rehypeKatex from "rehype-katex";
+
 import {
   ArrowClockwiseIcon,
   ArrowLeftIcon,
@@ -284,9 +289,9 @@ function CaseStudyDetail({
         </h1>
 
         {study.description && (
-          <p className="mt-6 text-lg leading-relaxed text-muted-foreground">
-            {study.description}
-          </p>
+          <div className="[&_ul]:list-disc [&_ol]:list-decimal [&_li]:marker:text-foreground [&_ul]:ps-6 [&_ol]:ps-6 mt-6">
+            <div className="share-markdown"><ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{study.description}</ReactMarkdown></div>
+          </div>
         )}
 
         {}
@@ -406,7 +411,9 @@ function ContentSection({ title, body }: { title: string; body: string }) {
       <h2 className="text-sm font-semibold uppercase tracking-widest text-muted-foreground">
         {title}
       </h2>
-      <p className="mt-2 whitespace-pre-wrap leading-relaxed">{body}</p>
+        <div className="[&_ul]:list-disc [&_ol]:list-decimal [&_li]:marker:text-foreground [&_ul]:ps-6 [&_ol]:ps-6 mt-2">
+          <div className="share-markdown"><ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>{body}</ReactMarkdown></div>
+        </div>
     </div>
   );
 }

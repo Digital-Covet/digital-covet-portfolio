@@ -1,4 +1,6 @@
+@import "katex/dist/katex.min.css";
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@uiw/react-md-editor/markdown-editor.css";
@@ -240,5 +242,31 @@
 
   .markdown-editor-wrapper .w-md-editor-toolbar button:hover {
     background-color: hsl(var(--accent)) !important;
+  }
+
+  .share-markdown table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1rem 0;
+    border: 1px solid oklch(0.26 0.01 300 / 20%);
+  }
+  .share-markdown th,
+  .share-markdown td {
+    border: 1px solid oklch(0.26 0.01 300 / 20%);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+  }
+  .share-markdown h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+  .share-markdown th {
+    background-color: var(--muted);
+    font-weight: 600;
+  }
+  .share-markdown tr:nth-child(even) td {
+    background-color: var(--muted);
   }
 }

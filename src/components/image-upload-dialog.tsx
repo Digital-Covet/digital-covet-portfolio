@@ -176,11 +176,11 @@ export function ImageUploadDialog({
         }
       ></DialogTrigger>
 
-      <DialogContent className="sm:max-w-2xl" initialFocus={false}>
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-hidden" initialFocus={false}>
         <div
           ref={dialogBodyRef}
           tabIndex={-1}
-          className="space-y-4 outline-none"
+          className="space-y-4 outline-none overflow-y-auto max-h-[calc(85vh-3rem)] pr-2"
           onFocusCapture={() => setIsFocused(true)}
           onBlurCapture={(event) => {
             const nextTarget = event.relatedTarget as Node | null;

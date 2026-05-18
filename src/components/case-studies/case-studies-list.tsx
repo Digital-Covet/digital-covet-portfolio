@@ -38,6 +38,7 @@ export function CaseStudiesList() {
           </p>
         </div>
         <Button
+          nativeButton={false}
           render={
             <Link href="/case-studies/new">
               <PlusIcon size={16} className="mr-2" />
@@ -118,6 +119,7 @@ export function CaseStudiesList() {
                 <Button
                   variant="ghost"
                   size="icon"
+                  nativeButton={false}
                   render={
                     <Link href={`/case-studies/${study.id}`}>
                       <PencilSimpleIcon size={16} />

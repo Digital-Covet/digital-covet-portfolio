@@ -45,6 +45,7 @@ export default function CaseStudiesListPage() {
           </p>
         </div>
         <Button
+          nativeButton={false}
           render={
             <Link href="/case-studies/new">
               <PlusIcon size={16} className="mr-2" />
@@ -71,11 +72,10 @@ export default function CaseStudiesListPage() {
               key={filter}
               type="button"
               onClick={() => vm.setStatusFilter(filter)}
-              className={`px-3 py-1 text-xs font-medium capitalize transition-colors rounded ${
-                vm.statusFilter === filter
+              className={`px-3 py-1 text-xs font-medium capitalize transition-colors rounded ${vm.statusFilter === filter
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted"
-              }`}
+                }`}
             >
               {filter}
             </button>
@@ -136,6 +136,7 @@ export default function CaseStudiesListPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      nativeButton={false}
                       render={
                         <Link href={`/case-studies/${study.id}`}>
                           <PencilSimpleIcon size={16} />

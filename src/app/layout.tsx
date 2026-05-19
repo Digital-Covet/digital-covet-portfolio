@@ -1,3 +1,4 @@
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Jost, Rubik } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
@@ -24,18 +25,20 @@ const interSans = Inter({
 });
 export const metadata: Metadata = {
   title: "Digital Covet Portfolio",
-  description: "Your professional digital portfolio showcasing projects and skills",
+  description:
+    "Your professional digital portfolio showcasing projects and skills",
   metadataBase: new URL("https://portfolio.digitalcovet.com"),
   openGraph: {
     title: "Digital Covet Portfolio",
-    description: "Your professional digital portfolio showcasing projects and skills",
+    description:
+      "Your professional digital portfolio showcasing projects and skills",
     url: "https://portfolio.digitalcovet.com",
     siteName: "Digital Covet Portfolio",
     locale: "en_US",
     type: "website",
     images: [
       {
-        url: "/opengraph-image.png",
+        url: "/og-image.jpg",
         width: 1200,
         height: 630,
         alt: "Digital Covet Portfolio",
@@ -45,8 +48,9 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Digital Covet Portfolio",
-    description: "Your professional digital portfolio showcasing projects and skills",
-    images: ["/twitter-image.png"],
+    description:
+      "Your professional digital portfolio showcasing projects and skills",
+    images: ["/og-image.jpg"],
   },
   icons: {
     apple: "/apple-touch-icons/apple-touch-icon.png",
@@ -72,6 +76,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         {children}
+        <SpeedInsights />
         <Toaster />
       </body>
     </html>

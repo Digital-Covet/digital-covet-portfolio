@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { OtpInput } from "@/components/ui/otp-input";
 import { authClient } from "@/lib/auth-client";
 
 interface TwoFactorVerifyProps {
@@ -99,24 +100,40 @@ export default function TwoFactorVerify({
   return (
     <div className="space-y-4">
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="code">
-            {mode === "totp" ? "Authenticator code" : "Backup code"}
+        <div className="space-y-3">
+          <Label className="text-center">
+            {mode === "totp"
+              ? "Authenticator code"
+              : "Backup code"}
           </Label>
-          <Input
-            id="code"
-            type="text"
-            inputMode={mode === "totp" ? "numeric" : "text"}
-            autoComplete={mode === "totp" ? "one-time-code" : "off"}
-            maxLength={mode === "totp" ? 6 : 24}
-            value={code}
-            onChange={(e) => setCode(e.target.value.trim())}
-            disabled={isLoading || cooldown > 0}
-            placeholder={
-              mode === "totp" ? "000000" : "8+ character backup code"
-            }
-            className="font-mono"
-          />
+
+          {mode === "totp" ? (
+            <OtpInput
+              value={code}
+              onChange={(next) => {
+                setCode(next);
+                setError(null);
+              }}
+              numInputs={6}
+              disabled={isLoading || cooldown > 0}
+              hasError={error !== null}
+            />
+          ) : (
+            <Input
+              id="code"
+              type="text"
+              autoComplete="off"
+              maxLength={24}
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value);
+                setError(null);
+              }}
+              disabled={isLoading || cooldown > 0}
+              placeholder="8+ character backup code"
+              className="font-mono"
+            />
+          )}
         </div>
 
         {error && (

@@ -33,7 +33,6 @@ export default async function Image() {
           fontSize: 120,
           fontWeight: 700,
           marginBottom: "20px",
-          fontFamily: "var(--font-jost)",
         }}
       >
         DC
@@ -41,7 +40,6 @@ export default async function Image() {
       <div
         style={{
           fontSize: 32,
-          fontFamily: "var(--font-rubik)",
           opacity: 0.9,
         }}
       >

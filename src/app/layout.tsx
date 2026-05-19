@@ -25,11 +25,11 @@ const interSans = Inter({
 export const metadata: Metadata = {
   title: "Digital Covet Portfolio",
   description: "Your professional digital portfolio showcasing projects and skills",
-  metadataBase: new URL("https://digitalcovet.com"),
+  metadataBase: new URL("https://portfolio.digitalcovet.com"),
   openGraph: {
     title: "Digital Covet Portfolio",
     description: "Your professional digital portfolio showcasing projects and skills",
-    url: "https://digitalcovet.com",
+    url: "https://portfolio.digitalcovet.com",
     siteName: "Digital Covet Portfolio",
     locale: "en_US",
     type: "website",
@@ -49,8 +49,7 @@ export const metadata: Metadata = {
     images: ["/twitter-image.png"],
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    apple: "/apple-touch-icons/apple-touch-icon.png",
   },
 };
 

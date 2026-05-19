@@ -15,6 +15,14 @@ export default function robots(): MetadataRoute.Robots {
         userAgent: "Twitterbot",
         allow: "/",
       },
+      {
+        userAgent: "WhatsApp",
+        allow: "/",
+      },
+      {
+        userAgent: "WhatsApp/2.24.4",
+        allow: "/",
+      },
     ],
   };
 }

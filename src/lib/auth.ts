@@ -1,8 +1,9 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
-import { admin as adminPlugin, twoFactor } from "better-auth/plugins";
+import { admin as adminPlugin, emailOTP, twoFactor } from "better-auth/plugins";
 import { prisma } from "@/db";
 import { sendEmail } from "@/services/email";
+import { renderDeleteVerificationEmail } from "@/services/email-templates";
 import { ac, adminRole, employeeRole, superadminRole } from "./permission";
 
 export const auth = betterAuth({
@@ -73,6 +74,35 @@ export const auth = betterAuth({
         superadmin: superadminRole,
         admin: adminRole,
         employee: employeeRole,
+      },
+    }),
+    emailOTP({
+      async sendVerificationOTP({ email, otp, type }) {
+        const username = email.split("@")[0];
+        const { html, text } = renderDeleteVerificationEmail({
+          username,
+          otp,
+        });
+        const subject =
+          type === "sign-in"
+            ? "Your verification code"
+            : type === "email-verification"
+              ? "Verify your email"
+              : "Reset your password";
+        try {
+          await sendEmail({
+            to: email,
+            subject,
+            text,
+            html,
+          });
+        } catch (error) {
+          console.error(
+            "[Auth Hook] Failed to send OTP email:",
+            error instanceof Error ? error.message : error,
+          );
+          throw new Error("Failed to send verification code.");
+        }
       },
     }),
   ],

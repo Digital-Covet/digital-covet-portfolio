@@ -25,6 +25,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -33,10 +41,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { authClient } from "@/lib/auth-client";
+import { Label } from "../ui/label";
 
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
+type DeleteStep = "confirm" | "verify";
 
 interface UserManagementProps {
   initialUsers: UserListItem[];
@@ -44,39 +52,88 @@ interface UserManagementProps {
   currentUserRole: string;
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 export function UserManagement({
   initialUsers,
   currentUserId,
 }: UserManagementProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-
-  // ── Delete dialog state ──────────────────────────────────────────────
   const [deleteTarget, setDeleteTarget] = useState<UserListItem | null>(null);
+  const [deleteStep, setDeleteStep] = useState<DeleteStep>("confirm");
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [transferUserId, setTransferUserId] = useState<string>("");
+  const [otp, setOtp] = useState("");
+  const [sendingOtp, setSendingOtp] = useState(false);
 
-  // ── Handlers ─────────────────────────────────────────────────────────
+  const handleSendOtp = useCallback(async () => {
+    if (!deleteTarget) return;
+    setDeleteError(null);
+    setSendingOtp(true);
+
+    const adminUser = initialUsers.find((u) => u.id === currentUserId);
+    if (!adminUser?.email) {
+      setDeleteError("Could not determine your email address.");
+      setSendingOtp(false);
+      return;
+    }
+
+    try {
+      const { error } = await authClient.emailOtp.sendVerificationOtp({
+        email: adminUser.email,
+        type: "sign-in",
+      });
+
+      if (error) {
+        setDeleteError(
+          error.message ||
+          "Failed to send verification code. Please try again.",
+        );
+        setSendingOtp(false);
+        return;
+      }
+
+      setDeleteStep("verify");
+    } catch (error) {
+      setDeleteError(
+        error instanceof Error
+          ? error.message
+          : "Failed to send verification code. Please try again.",
+      );
+    } finally {
+      setSendingOtp(false);
+    }
+  }, [deleteTarget, initialUsers, currentUserId]);
 
   const handleDelete = useCallback(() => {
     if (!deleteTarget) return;
     setDeleteError(null);
     startTransition(async () => {
-      const result = await deleteUser({ id: deleteTarget.id });
+      const result = await deleteUser({
+        id: deleteTarget.id,
+        transferToUserId: transferUserId || undefined,
+        otp,
+      });
       if (result.ok) {
         setDeleteTarget(null);
+        setDeleteStep("confirm");
+        setTransferUserId("");
+        setOtp("");
         toast.success("User deleted successfully");
         router.refresh();
       } else {
         setDeleteError(result.error);
       }
     });
-  }, [deleteTarget, router]);
+  }, [deleteTarget, transferUserId, otp, router]);
 
-  // ── Badge helpers ─────────────────────────────────────────────────────
+  const resetDeleteState = useCallback(() => {
+    setDeleteTarget(null);
+    setDeleteStep("confirm");
+    setTransferUserId("");
+    setOtp("");
+    setDeleteError(null);
+    setSendingOtp(false);
+  }, []);
 
   const getRoleBadge = (role: string | null) => {
     switch (role) {
@@ -101,7 +158,6 @@ export function UserManagement({
         return <Badge variant="secondary">Employee</Badge>;
     }
   };
-
   const getStatusBadge = (banned: boolean | null) => {
     return banned ? (
       <Badge variant="destructive">Banned</Badge>
@@ -114,7 +170,6 @@ export function UserManagement({
       </Badge>
     );
   };
-
   const formatDate = (iso: string) =>
     new Date(iso).toLocaleDateString("en-US", {
       year: "numeric",
@@ -122,11 +177,11 @@ export function UserManagement({
       day: "numeric",
     });
 
-  // ── Render ────────────────────────────────────────────────────────────
+  const adminEmail = initialUsers.find((u) => u.id === currentUserId)?.email;
 
   return (
     <div className="space-y-6 p-6">
-      {/* ─── Header ──────────────────────────────────────────────────── */}
+      {}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center bg-primary/10">
@@ -141,7 +196,6 @@ export function UserManagement({
             </p>
           </div>
         </div>
-
         <Button
           render={
             <Link href="/users/invite">
@@ -153,8 +207,7 @@ export function UserManagement({
           nativeButton={false}
         ></Button>
       </div>
-
-      {/* ─── Data Table ──────────────────────────────────────────────── */}
+      {}
       <div className="border">
         <Table>
           <TableHeader>
@@ -197,9 +250,13 @@ export function UserManagement({
                         className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
                         onClick={() => {
                           setDeleteError(null);
+                          setTransferUserId("");
+                          setOtp("");
+                          setDeleteStep("confirm");
+                          setSendingOtp(false);
                           setDeleteTarget(user);
                         }}
-                        disabled={isPending}
+                        disabled={isPending || sendingOtp}
                       >
                         <TrashSimpleIcon size={16} />
                         Delete
@@ -214,54 +271,143 @@ export function UserManagement({
           </TableBody>
         </Table>
       </div>
-
-      {/* ─── Delete Confirmation ─────────────────────────────────────── */}
+      {}
       <AlertDialog
         open={!!deleteTarget}
         onOpenChange={(open) => {
-          if (!open) setDeleteTarget(null);
+          if (!open) {
+            resetDeleteState();
+          }
         }}
       >
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete User</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete{" "}
-              <span className="font-semibold text-foreground">
-                {deleteTarget?.name}
-              </span>{" "}
-              ({deleteTarget?.email})? This action is permanent and cannot be
-              undone. All associated sessions, accounts, and data will be
-              removed.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          {deleteError && (
-            <div className="border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
-              {deleteError}
-            </div>
-          )}
-
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                handleDelete();
-              }}
-              disabled={isPending}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isPending ? (
-                <>
-                  <SpinnerIcon size={16} className="mr-2 animate-spin" />
-                  Deleting…
-                </>
-              ) : (
-                "Delete User"
+          {deleteStep === "confirm" ? (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete User</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete{" "}
+                  <span className="font-semibold text-foreground">
+                    {deleteTarget?.name}
+                  </span>{" "}
+                  ({deleteTarget?.email})? This action is permanent and cannot
+                  be undone. All associated sessions and accounts will be
+                  removed. You can optionally transfer their created data to
+                  another user.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Transfer data to:</Label>
+                <Select
+                  value={transferUserId}
+                  onValueChange={(v) => v && setTransferUserId(v)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a user (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {initialUsers
+                      .filter((u) => u.id !== deleteTarget?.id)
+                      .map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.name} ({u.email})
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {deleteError && (
+                <div className="border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                  {deleteError}
+                </div>
               )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={sendingOtp}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleSendOtp();
+                  }}
+                  disabled={sendingOtp}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {sendingOtp ? (
+                    <>
+                      <SpinnerIcon size={16} className="mr-2 animate-spin" />
+                      Sending OTP…
+                    </>
+                  ) : (
+                    "Delete User"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          ) : (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Verify Deletion</AlertDialogTitle>
+                <AlertDialogDescription>
+                  A 6-digit verification code has been sent to{" "}
+                  <span className="font-semibold text-foreground">
+                    {adminEmail}
+                  </span>
+                  . Enter the code below to confirm deletion of{" "}
+                  <span className="font-semibold text-foreground">
+                    {deleteTarget?.name}
+                  </span>
+                  .
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-2">
+                <Label htmlFor="otp-input" className="text-sm font-medium">
+                  Verification Code
+                </Label>
+                <Input
+                  id="otp-input"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  placeholder="000000"
+                  value={otp}
+                  onChange={(e) =>
+                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                  }
+                  className="text-center text-2xl tracking-[0.5em] font-mono"
+                  autoComplete="one-time-code"
+                />
+              </div>
+              {deleteError && (
+                <div className="border border-destructive/20 bg-destructive/10 p-3 text-sm text-destructive">
+                  {deleteError}
+                </div>
+              )}
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isPending}>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDelete();
+                  }}
+                  disabled={isPending || otp.length < 6}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  {isPending ? (
+                    <>
+                      <SpinnerIcon size={16} className="mr-2 animate-spin" />
+                      Verifying & Deleting…
+                    </>
+                  ) : (
+                    "Verify & Delete"
+                  )}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
         </AlertDialogContent>
       </AlertDialog>
     </div>

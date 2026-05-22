@@ -112,6 +112,7 @@ export function DashboardView() {
             dateRange={filters.dateRange}
             industryId={filters.industryId}
             clientId={filters.clientId}
+            clientBreakdown={derived.clientBreakdown}
           />
           <Button
             variant="outline"

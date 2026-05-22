@@ -148,7 +148,7 @@ export function InviteAdminForm({ currentUserRole }: InviteAdminFormProps) {
             variant="ghost"
             size="sm"
             render={
-              <Link href="/admin/users">
+              <Link href="/users">
                 <ArrowLeftIcon size={16} />
                 Back to User List
               </Link>

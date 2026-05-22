@@ -91,7 +91,7 @@ export function ViewsChart({ buckets, colors }: ViewsChartProps) {
           border: { display: false },
           ticks: {
             font: { size: 11, family: "system-ui, sans-serif" },
-            color: "#ffffff",
+            color: "#000000",
             maxRotation: 0,
             autoSkip: true,
             maxTicksLimit: 12,
@@ -103,7 +103,7 @@ export function ViewsChart({ buckets, colors }: ViewsChartProps) {
           beginAtZero: true,
           ticks: {
             font: { size: 11, family: "system-ui, sans-serif" },
-            color: "#ffffff",
+            color: "#000000",
             precision: 0,
           },
         },

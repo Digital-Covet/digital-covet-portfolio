@@ -1,20 +1,11 @@
 "use server";
-
 import type { Prisma } from "@generated/prisma/client";
 import { cookies, headers } from "next/headers";
 import { z } from "zod";
 import { prisma } from "@/db";
 import { verifyPassword } from "@/lib/password";
 
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
 const SHARE_UNLOCKED_PREFIX = "share_unlocked_";
-
-// ---------------------------------------------------------------------------
-// Zod Schemas
-// ---------------------------------------------------------------------------
 
 const tokenSchema = z.string().min(10).max(200);
 const unlockSchema = z.object({
@@ -22,21 +13,17 @@ const unlockSchema = z.object({
   password: z.string().max(200).optional(),
 });
 
-// ---------------------------------------------------------------------------
-// Exported types
-// ---------------------------------------------------------------------------
-
 export type ShareStatus = "ok" | "expired" | "revoked" | "limit";
 
 export type ShareInfo =
   | { exists: false }
   | {
-      exists: true;
-      name: string;
-      status: ShareStatus;
-      unlocked: boolean;
-      requiresPassword: boolean;
-    };
+    exists: true;
+    name: string;
+    status: ShareStatus;
+    unlocked: boolean;
+    requiresPassword: boolean;
+  };
 
 export type SerializedStudy = {
   id: string;
@@ -75,10 +62,6 @@ export type ShareContent = {
   studies: SerializedStudy[];
   metrics: SerializedMetric[];
 };
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function computeShareStatus(share: {
   revoked: boolean;
@@ -120,10 +103,6 @@ async function isShareUnlocked(shareId: string): Promise<boolean> {
   return cookieStore.get(getUnlockCookieName(shareId))?.value === "1";
 }
 
-// ---------------------------------------------------------------------------
-// Actions
-// ---------------------------------------------------------------------------
-
 export async function getShareInfo(token: string): Promise<ShareInfo> {
   const validatedToken = tokenSchema.safeParse(token);
   if (!validatedToken.success) return { exists: false };
@@ -157,11 +136,12 @@ export async function unlockShare(token: string, password: string) {
   const share = await prisma.shareLink.findFirst({
     where: { token: validated.data.token },
   });
-
   if (!share) throw new Error("Share not found");
+
   assertShareAccessible(share);
 
   if (share.passwordHash === null) {
+    // no password needed
   } else if (!validated.data.password) {
     throw new Error("Password required");
   } else {
@@ -177,10 +157,36 @@ export async function unlockShare(token: string, password: string) {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30, // 30 days
+    maxAge: 60 * 60 * 24 * 30,
     path: "/",
   });
 
+  // View recording has been moved to getShareContent so that all share
+  // types (password-protected and non-password) are handled uniformly.
+
+  return { success: true };
+}
+
+export async function getShareContent(token: string): Promise<ShareContent> {
+  const validatedToken = tokenSchema.safeParse(token);
+  if (!validatedToken.success) throw new Error("Not found");
+
+  const share = await prisma.shareLink.findFirst({
+    where: { token: validatedToken.data },
+  });
+  if (!share) throw new Error("Not found");
+
+  // Full accessibility check — catches expired, revoked, and view-limited
+  // shares even when accessed without a password gate.
+  assertShareAccessible(share);
+
+  if (share.passwordHash !== null) {
+    const unlocked = await isShareUnlocked(share.id);
+    if (!unlocked) throw new Error("Not unlocked");
+  }
+
+  // Record the view exactly once per successful content fetch, regardless
+  // of whether the share is password-protected.
   const headersList = await headers();
   const forwarded = headersList.get("x-forwarded-for");
   const ip = forwarded
@@ -202,28 +208,7 @@ export async function unlockShare(token: string, password: string) {
     }),
   ]);
 
-  return { success: true };
-}
-
-export async function getShareContent(token: string): Promise<ShareContent> {
-  const validatedToken = tokenSchema.safeParse(token);
-  if (!validatedToken.success) throw new Error("Not found");
-
-  const share = await prisma.shareLink.findFirst({
-    where: { token: validatedToken.data },
-  });
-
-  if (!share) throw new Error("Not found");
-  if (share.revoked) throw new Error("Revoked");
-
-  if (share.passwordHash !== null) {
-    const unlocked = await isShareUnlocked(share.id);
-    if (!unlocked) throw new Error("Not unlocked");
-  }
-
-  // Build Prisma where conditions
   const where: Prisma.CaseStudyWhereInput = { status: "published" };
-
   const specific = share.specificCaseStudyIds;
   if (specific.length > 0) {
     where.id = { in: specific };
@@ -277,7 +262,6 @@ export async function getShareContent(token: string): Promise<ShareContent> {
     unit: string | null;
     sortOrder: number;
   }> = [];
-
   if (ids.length > 0) {
     metrics = await prisma.caseStudyMetric.findMany({
       where: { caseStudyId: { in: ids } },
@@ -286,65 +270,65 @@ export async function getShareContent(token: string): Promise<ShareContent> {
   }
 
   function toPublicUrl(proxyUrl: string): string {
-  const u = new URL(proxyUrl, "http://placeholder");
-  if (u.pathname === "/api/file" || u.pathname.endsWith("/api/file")) {
-    u.pathname = "/api/public/file";
+    const u = new URL(proxyUrl, "http://placeholder");
+    if (u.pathname === "/api/file" || u.pathname.endsWith("/api/file")) {
+      u.pathname = "/api/public/file";
+    }
+    return u.toString().replace("http://placeholder", "");
   }
-  return u.toString().replace("http://placeholder", "");
-}
 
-function transformStudyMedia(study: SerializedStudy): SerializedStudy {
-  const urls = study.attachmentUrls;
-  let transformedUrls: unknown = null;
-  if (Array.isArray(urls)) {
-    transformedUrls = urls.map((a: unknown) => {
-      const att = a as { name: string; url: string } | null;
-      return att ? { ...att, url: toPublicUrl(att.url) } : att;
-    });
-  }
-  return {
-    ...study,
-    heroImageUrl: study.heroImageUrl ? toPublicUrl(study.heroImageUrl) : null,
-    galleryUrls: study.galleryUrls.map(toPublicUrl),
-    attachmentUrls: transformedUrls,
-    client: study.client
-      ? {
+  function transformStudyMedia(study: SerializedStudy): SerializedStudy {
+    const urls = study.attachmentUrls;
+    let transformedUrls: unknown = null;
+    if (Array.isArray(urls)) {
+      transformedUrls = urls.map((a: unknown) => {
+        const att = a as { name: string; url: string } | null;
+        return att ? { ...att, url: toPublicUrl(att.url) } : att;
+      });
+    }
+    return {
+      ...study,
+      heroImageUrl: study.heroImageUrl ? toPublicUrl(study.heroImageUrl) : null,
+      galleryUrls: study.galleryUrls.map(toPublicUrl),
+      attachmentUrls: transformedUrls,
+      client: study.client
+        ? {
           ...study.client,
           logoUrl: study.client.logoUrl
             ? toPublicUrl(study.client.logoUrl)
             : null,
         }
-      : null,
-  };
-}
+        : null,
+    };
+  }
 
-const serializedStudies: SerializedStudy[] = studies.map((s) => {
-  const raw: SerializedStudy = {
-    id: s.id,
-    title: s.title,
-    description: s.description,
-    heroImageUrl: s.heroImageUrl,
-    projectDate: s.projectDate?.toISOString() ?? null,
-    clientId: s.clientId,
-    slug: s.slug,
-    galleryUrls: s.galleryUrls,
-    videoEmbedUrl: s.videoEmbedUrl,
-    challenge: s.challenge,
-    solution: s.solution,
-    results: s.results,
-    testimonialQuote: s.testimonialQuote,
-    testimonialAuthor: s.testimonialAuthor,
-    testimonialTitle: s.testimonialTitle,
-    attachmentUrls: s.attachmentUrls,
-    createdAt: s.createdAt.toISOString(),
-    updatedAt: s.updatedAt.toISOString(),
-    client: s.client
-      ? { name: s.client.name, logoUrl: s.client.logoUrl }
-      : null,
-    keyBusinesses: s.caseStudyKeyBusinesses.map((k) => k.keyBusiness),
-  };
-  return transformStudyMedia(raw);
-});
+  const serializedStudies: SerializedStudy[] = studies.map((s) => {
+    const raw: SerializedStudy = {
+      id: s.id,
+      title: s.title,
+      description: s.description,
+      heroImageUrl: s.heroImageUrl,
+      projectDate: s.projectDate?.toISOString() ?? null,
+      clientId: s.clientId,
+      slug: s.slug,
+      galleryUrls: s.galleryUrls,
+      videoEmbedUrl: s.videoEmbedUrl,
+      challenge: s.challenge,
+      solution: s.solution,
+      results: s.results,
+      testimonialQuote: s.testimonialQuote,
+      testimonialAuthor: s.testimonialAuthor,
+      testimonialTitle: s.testimonialTitle,
+      attachmentUrls: s.attachmentUrls,
+      createdAt: s.createdAt.toISOString(),
+      updatedAt: s.updatedAt.toISOString(),
+      client: s.client
+        ? { name: s.client.name, logoUrl: s.client.logoUrl }
+        : null,
+      keyBusinesses: s.caseStudyKeyBusinesses.map((k) => k.keyBusiness),
+    };
+    return transformStudyMedia(raw);
+  });
 
   const serializedMetrics: SerializedMetric[] = metrics.map((m) => ({
     id: m.id,

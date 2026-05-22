@@ -24,17 +24,13 @@ const createShareSchema = z.object({
   filterClientIds: z.array(z.uuid()).max(50).default([]),
   specificCaseStudyIds: z.array(z.uuid()).max(200).default([]),
 });
-
 const revokeShareSchema = z.object({
   id: z.uuid(),
 });
-
 const getShareViewsSchema = z.object({
   shareLinkId: z.uuid(),
 });
-
 export type CreateShareInput = z.infer<typeof createShareSchema>;
-
 export type SerializedShare = {
   id: string;
   createdAt: string;
@@ -58,20 +54,17 @@ export type SerializedShare = {
   createdByUser: { name: string } | null;
   _count: { shareViews: number };
 };
-
 export type SerializedShareView = {
   id: string;
   ip: string | null;
   userAgent: string | null;
   viewedAt: string;
 };
-
 export async function createShare(input: CreateShareInput) {
   const user = await requireRole("employee");
   const validated = createShareSchema.parse(input);
   const token = generateToken(24);
   const passwordHash = await hashPassword(validated.password);
-
   const share = await prisma.shareLink.create({
     data: {
       token,
@@ -91,14 +84,10 @@ export async function createShare(input: CreateShareInput) {
       createdBy: user.id,
     },
   });
-
   revalidatePath("/shares");
   revalidatePath("/dashboard");
-
-  // FIX: Changed `/share/${token}` to `/shares/${token}` to match the Next.js route
   return { share, url: `/shares/${token}` };
 }
-
 export async function listShares() {
   const user = await requireRole("employee");
   const rbacFilter = await buildCreatedByFilter(user, getDeptUserIds);
@@ -117,7 +106,6 @@ export async function listShares() {
   }));
   return { shares: serialized };
 }
-
 export async function revokeShare(id: string) {
   const user = await requireRole("employee");
   const { id: validatedId } = revokeShareSchema.parse({ id });
@@ -135,7 +123,23 @@ export async function revokeShare(id: string) {
   revalidatePath("/dashboard");
   return { success: true };
 }
-
+export async function unrevokeShare(id: string) {
+  const user = await requireRole("employee");
+  const { id: validatedId } = revokeShareSchema.parse({ id });
+  const rbacFilter = await buildCreatedByFilter(user, getDeptUserIds);
+  const result = await prisma.shareLink.updateMany({
+    where: { id: validatedId, ...rbacFilter },
+    data: { revoked: false },
+  });
+  if (result.count === 0) {
+    throw new Error(
+      "Share not found or you do not have permission to unrevoke it",
+    );
+  }
+  revalidatePath("/shares");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
 export async function getShareViews(shareLinkId: string) {
   const user = await requireRole("employee");
   const { shareLinkId: validatedId } = getShareViewsSchema.parse({

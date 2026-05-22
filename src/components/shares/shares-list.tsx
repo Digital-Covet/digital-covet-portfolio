@@ -1,5 +1,4 @@
 "use client";
-
 import {
   ArrowClockwiseIcon,
   EyeIcon,
@@ -16,7 +15,11 @@ import type {
   SerializedShare,
   SerializedShareView,
 } from "@/app/(app)/shares/actions";
-import { getShareViews, revokeShare } from "@/app/(app)/shares/actions";
+import {
+  getShareViews,
+  revokeShare,
+  unrevokeShare,
+} from "@/app/(app)/shares/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,26 +39,21 @@ import { getShareStatusBadge } from "@/lib/share-display";
 interface SharesListProps {
   initialShares: SerializedShare[];
 }
-
 interface ViewingState {
   id: string;
   name: string;
 }
-
 export function SharesList({ initialShares }: SharesListProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-
   const [viewing, setViewing] = useState<ViewingState | null>(null);
   const [viewLogs, setViewLogs] = useState<SerializedShareView[]>([]);
   const [viewLogsLoading, setViewLogsLoading] = useState(false);
-  const [revokingId, setRevokingId] = useState<string | null>(null);
-
+  const [actionId, setActionId] = useState<string | null>(null);
   function handleViewLog(id: string, name: string) {
     setViewing({ id, name });
     setViewLogs([]);
     setViewLogsLoading(true);
-
     getShareViews(id)
       .then((data) => {
         setViewLogs(data.views);
@@ -69,10 +67,8 @@ export function SharesList({ initialShares }: SharesListProps) {
         setViewLogsLoading(false);
       });
   }
-
   function handleRevoke(id: string) {
-    setRevokingId(id);
-
+    setActionId(id);
     startTransition(async () => {
       try {
         await revokeShare(id);
@@ -83,11 +79,26 @@ export function SharesList({ initialShares }: SharesListProps) {
           err instanceof Error ? err.message : "Failed to revoke share",
         );
       } finally {
-        setRevokingId(null);
+        setActionId(null);
       }
     });
   }
-
+  function handleUnrevoke(id: string) {
+    setActionId(id);
+    startTransition(async () => {
+      try {
+        await unrevokeShare(id);
+        toast.success("Share link restored");
+        router.refresh();
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Failed to unrevoke share",
+        );
+      } finally {
+        setActionId(null);
+      }
+    });
+  }
   return (
     <div className="md:p-10">
       {}
@@ -108,27 +119,25 @@ export function SharesList({ initialShares }: SharesListProps) {
           }
         ></Button>
       </div>
-
       {}
       <div className="mt-6 grid gap-3">
         {initialShares.map((share) => (
           <ShareCard
             key={share.id}
             share={share}
-            isRevoking={revokingId === share.id}
+            isActioning={actionId === share.id}
             isPendingGlobal={isPending}
             onViewLog={() => handleViewLog(share.id, share.name)}
             onRevoke={() => handleRevoke(share.id)}
+            onUnrevoke={() => handleUnrevoke(share.id)}
           />
         ))}
-
         {initialShares.length === 0 && (
           <div className="border border-dashed py-12 text-center text-sm text-muted-foreground">
             No shares yet. Create your first share link to get started.
           </div>
         )}
       </div>
-
       {}
       <Dialog
         open={viewing !== null}
@@ -140,7 +149,6 @@ export function SharesList({ initialShares }: SharesListProps) {
           <DialogHeader>
             <DialogTitle>View Log — {viewing?.name ?? "Share"}</DialogTitle>
           </DialogHeader>
-
           {viewLogsLoading ? (
             <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
               <ArrowClockwiseIcon size={16} className="mr-2 animate-spin" />
@@ -183,21 +191,21 @@ export function SharesList({ initialShares }: SharesListProps) {
     </div>
   );
 }
-
 interface ShareCardProps {
   share: SerializedShare;
-  isRevoking: boolean;
+  isActioning: boolean;
   isPendingGlobal: boolean;
   onViewLog: () => void;
   onRevoke: () => void;
+  onUnrevoke: () => void;
 }
-
 function ShareCard({
   share,
-  isRevoking,
+  isActioning,
   isPendingGlobal,
   onViewLog,
   onRevoke,
+  onUnrevoke,
 }: ShareCardProps) {
   const badge = getShareStatusBadge({
     revoked: share.revoked,
@@ -205,12 +213,10 @@ function ShareCard({
     maxViews: share.maxViews,
     viewCount: share.viewCount,
   });
-
   const shareUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/shares/${share.token}`
       : `/shares/${share.token}`;
-
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -227,7 +233,6 @@ function ShareCard({
           )}
         </div>
       </CardHeader>
-
       <CardContent className="pb-3">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
           <span className="flex items-center gap-1">
@@ -235,19 +240,15 @@ function ShareCard({
             {share.viewCount}
             {share.maxViews ? ` / ${share.maxViews}` : ""} views
           </span>
-
           <span>
             Created: {format(new Date(share.createdAt), "MMM d, yyyy")}
           </span>
-
           {share.expiresAt && (
             <span>
               Expires: {format(new Date(share.expiresAt), "MMM d, yyyy")}
             </span>
           )}
-
           {share.createdByUser && <span>By: {share.createdByUser.name}</span>}
-
           <button
             type="button"
             className="inline-flex items-center gap-1 text-primary hover:underline"
@@ -261,7 +262,6 @@ function ShareCard({
           </button>
         </div>
       </CardContent>
-
       <CardFooter className="flex justify-end gap-2 pt-0">
         <Button
           variant="outline"
@@ -272,15 +272,28 @@ function ShareCard({
           <EyeIcon size={16} className="mr-1.5" />
           View Log
         </Button>
-
-        {!share.revoked && (
+        {share.revoked ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onUnrevoke}
+            disabled={isActioning || isPendingGlobal}
+          >
+            {isActioning ? (
+              <ArrowClockwiseIcon size={16} className="mr-1.5 animate-spin" />
+            ) : (
+              <ArrowClockwiseIcon size={16} className="mr-1.5" />
+            )}
+            Unrevoke
+          </Button>
+        ) : (
           <Button
             variant="destructive"
             size="sm"
             onClick={onRevoke}
-            disabled={isRevoking || isPendingGlobal}
+            disabled={isActioning || isPendingGlobal}
           >
-            {isRevoking ? (
+            {isActioning ? (
               <ArrowClockwiseIcon size={16} className="mr-1.5 animate-spin" />
             ) : (
               <ProhibitIcon size={16} className="mr-1.5" />

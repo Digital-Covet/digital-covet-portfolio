@@ -101,7 +101,6 @@ export interface DailyViewBucket {
 export interface DashboardViewStats {
   viewCountByShareId: Record<string, number>;
   totalViews: number;
-
   dailyBuckets: DailyViewBucket[];
 }
 

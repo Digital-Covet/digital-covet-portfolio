@@ -13,6 +13,8 @@ import { authClient } from "@/lib/auth-client";
 
 export function UserDropdown() {
   const router = useRouter();
+  const { data: session } = authClient.useSession();
+  const userImage = session?.user?.image;
 
   const handleSignOut = async () => {
     await authClient.signOut();
@@ -22,7 +24,15 @@ export function UserDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="outline-none cursor-pointer rounded-full overflow-hidden p-0 border-0 bg-transparent">
-        <Avatar className="size-8" />
+        {userImage ? (
+          <img
+            src={userImage}
+            alt=""
+            className="size-8 rounded-full object-cover"
+          />
+        ) : (
+          <Avatar className="size-8" />
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-44">
         <DropdownMenuItem

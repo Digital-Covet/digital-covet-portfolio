@@ -254,3 +254,55 @@ function fireInviteEmail(
     html,
   }).catch((e) => console.error("[Background Email] Failed:", e));
 }
+
+const updateUserRoleSchema = z.object({
+  userId: z.string().min(1, "User ID is required"),
+  newRole: z.enum(["employee", "admin", "superadmin"], {
+    error: "Role must be employee, admin, or superadmin",
+  }),
+});
+
+export async function updateUserRole(
+  input: z.infer<typeof updateUserRoleSchema>,
+): Promise<Result<{ success: boolean }>> {
+  const reqHeaders = await headers();
+  const session = await auth.api.getSession({ headers: reqHeaders });
+
+  if (!session?.user) {
+    return err("Unauthorized.");
+  }
+
+  if (session.user.role !== ROLES.SUPERADMIN) {
+    return err("Only superadmins can change user roles.");
+  }
+
+  const data = updateUserRoleSchema.parse(input);
+
+  if (data.userId === session.user.id) {
+    return err("You cannot change your own role.");
+  }
+
+  try {
+    const targetUser = await prisma.user.findUnique({
+      where: { id: data.userId },
+      select: { id: true },
+    });
+
+    if (!targetUser) {
+      return err("User not found.");
+    }
+
+    await prisma.user.update({
+      where: { id: data.userId },
+      data: { role: data.newRole },
+    });
+
+    revalidatePath("/admin/users");
+    return ok({ success: true });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "An unexpected error occurred.";
+    console.error("[updateUserRole]", message);
+    return err(message);
+  }
+}

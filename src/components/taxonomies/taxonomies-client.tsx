@@ -39,15 +39,16 @@ export function TaxonomiesClient({ data }: { data: TaxonomyDataMap }) {
         title="Sectors"
         type="sectors"
         items={data.sectors}
-        onSelect={setSelectedSectorId}
+        onSelect={(id) => {
+          setSelectedSectorId(id);
+          setSelectedIndustryId(null);
+        }}
       />
       {selectedSectorId && (
         <TaxonomyList
           title="Industries"
           type="industries"
           items={visibleIndustries}
-          parents={data.sectors}
-          parentType="sectors"
           onSelect={setSelectedIndustryId}
         />
       )}
@@ -56,8 +57,6 @@ export function TaxonomiesClient({ data }: { data: TaxonomyDataMap }) {
           title="Key Businesses"
           type="key_businesses"
           items={visibleKeyBusinesses}
-          parents={visibleIndustries}
-          parentType="industries"
         />
       )}
       <TaxonomyList

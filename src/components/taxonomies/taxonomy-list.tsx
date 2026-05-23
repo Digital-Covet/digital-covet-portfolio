@@ -17,13 +17,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import type { TaxonomyType } from "@/utils/taxonomy-crud";
 
 type T = TaxonomyType;
@@ -39,8 +32,6 @@ interface TaxonomyListProps {
   title: string;
   type: T;
   items: TaxonomyItem[];
-  parents?: TaxonomyItem[];
-  parentType?: "sectors" | "industries";
   onSelect?: (id: string) => void;
 }
 
@@ -48,19 +39,12 @@ export function TaxonomyList({
   title,
   type,
   items,
-  parents = [],
-  parentType,
   onSelect,
 }: TaxonomyListProps) {
   const router = useRouter();
   const [name, setName] = useState("");
-  const [parentId, setParentId] = useState<string | undefined>("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  const showParentSelect =
-    (type === "industries" && parentType === "sectors") ||
-    (type === "key_businesses" && parentType === "industries");
 
   const showBusinessModelInput = type === "business_models";
 
@@ -70,13 +54,8 @@ export function TaxonomyList({
       await createTaxonomy({
         type,
         name: name.trim(),
-        parentId:
-          showParentSelect && parentId && parentId !== "__none__"
-            ? parentId
-            : undefined,
       });
       setName("");
-      setParentId("");
       toast.success(`${name.trim()} added`);
       router.refresh();
     } catch (e) {
@@ -112,30 +91,6 @@ export function TaxonomyList({
       </CardHeader>
       <CardContent className="space-y-2">
         <div className="space-y-2">
-          {showParentSelect && (
-            <Select
-              value={parentId || ""}
-              onValueChange={(v) =>
-                setParentId(v === "__none__" ? "" : v || "")
-              }
-            >
-              <SelectTrigger>
-                <SelectValue>
-                  {parentId && parentId !== "__none__"
-                    ? parents.find((p) => p.id === parentId)?.name
-                    : "Select parent"}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__none__">— None —</SelectItem>
-                {parents.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
           {showBusinessModelInput ? (
             <>
               <Input

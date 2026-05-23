@@ -58,6 +58,12 @@ export default function SharePage({
   }, [token]);
 
   useEffect(() => {
+    if (content?.name) {
+      document.title = `${content.name} — Digital Covet Portfolio`;
+    }
+  }, [content]);
+
+  useEffect(() => {
     if (info && info.exists && info.unlocked && info.status === "ok") {
       getShareContent(token)
         .then(setContent)
@@ -80,23 +86,23 @@ export default function SharePage({
 
   if (!info) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+      <main className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         <ArrowClockwiseIcon size={16} className="mr-2 animate-spin" />
         Loading…
-      </div>
+      </main>
     );
   }
 
   if (!info.exists) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+      <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
         <Card className="w-full max-w-md p-8 text-center">
           <h1 className="text-2xl font-bold">Link Not Found</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             This share link is invalid or has been removed.
           </p>
         </Card>
-      </div>
+      </main>
     );
   }
 
@@ -109,18 +115,18 @@ export default function SharePage({
           : "View limit reached.";
 
     return (
-      <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
+      <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4">
         <Card className="w-full max-w-md p-8 text-center">
           <h1 className="text-2xl font-bold">No Longer Available</h1>
           <p className="mt-2 text-sm text-muted-foreground">{msg}</p>
         </Card>
-      </div>
+      </main>
     );
   }
 
   if (info.requiresPassword && !info.unlocked) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted/30 px-4">
+      <main className="flex min-h-screen items-center justify-center bg-linear-to-br from-background to-muted/30 px-4">
         <Card className="w-full max-w-md p-8">
           <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <LockIcon size={16} className="h-5 w-5 text-primary" />
@@ -147,16 +153,16 @@ export default function SharePage({
             </Button>
           </form>
         </Card>
-      </div>
+      </main>
     );
   }
 
   if (!content) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
+      <main className="flex min-h-screen items-center justify-center text-sm text-muted-foreground">
         <ArrowClockwiseIcon size={16} className="mr-2 animate-spin" />
         Loading portfolio…
-      </div>
+      </main>
     );
   }
 
@@ -173,7 +179,7 @@ export default function SharePage({
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       {}
       <div className="border-b bg-linear-to-br from-primary/5 to-transparent">
         <div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
@@ -203,7 +209,8 @@ export default function SharePage({
                 <img
                   src={s.heroImageUrl}
                   alt={s.title}
-                  className="h-48 w-full object-cover transition-transform group-hover:scale-105"
+                  loading="lazy"
+                  className="aspect-[3/2] w-full object-cover transition-transform group-hover:scale-105"
                 />
               ) : (
                 <div className="h-48 w-full bg-muted" />
@@ -217,7 +224,7 @@ export default function SharePage({
                   ))}
                   {s.client?.name && <span>· {s.client.name}</span>}
                 </div>
-                <h3 className="mt-2 font-semibold">{s.title}</h3>
+                <h2 className="mt-2 font-semibold">{s.title}</h2>
                 {s.description && (
                   <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">
                     {s.description}
@@ -234,7 +241,7 @@ export default function SharePage({
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -266,7 +273,7 @@ function CaseStudyDetail({
   }, [galleryIndex, study.galleryUrls]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background">
       {}
       <div className="sticky top-0 z-10 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center px-6 py-3">
@@ -280,8 +287,8 @@ function CaseStudyDetail({
       {study.heroImageUrl && (
         <img
           src={study.heroImageUrl}
-          alt=""
-          className="h-72 w-full object-cover md:h-96"
+          alt={study.title}
+          className="aspect-video w-full object-cover md:aspect-[21/9]"
         />
       )}
 
@@ -382,7 +389,7 @@ function CaseStudyDetail({
                   onClick={() => setGalleryIndex(i)}
                   className="cursor-zoom-in overflow-hidden rounded-lg border transition-shadow hover:shadow-lg"
                 >
-                  <img src={u} alt="" className="w-full object-cover" />
+                  <img src={u} alt={`Gallery image ${i + 1}`} loading="lazy" className="aspect-video w-full object-cover" />
                 </button>
               ))}
             </div>
@@ -401,7 +408,7 @@ function CaseStudyDetail({
                   <div className="relative flex items-center justify-center">
                     <img
                       src={study.galleryUrls[galleryIndex]}
-                      alt=""
+                      alt={`Gallery image ${galleryIndex + 1}`}
                       className="max-h-[90vh] max-w-full object-contain"
                     />
                     {study.galleryUrls.length > 1 && (
@@ -493,7 +500,7 @@ function CaseStudyDetail({
           </div>
         )}
       </div>
-    </div>
+    </main>
   );
 }
 

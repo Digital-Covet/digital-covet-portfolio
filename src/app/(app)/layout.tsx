@@ -8,7 +8,6 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { UserDropdown } from "@/components/user-dropdown";
-
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider

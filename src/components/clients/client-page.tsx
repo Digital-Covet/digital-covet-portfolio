@@ -5,7 +5,6 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { deleteClient, upsertClient } from "@/actions/clients";
 import { FileUploader, ImagePreview } from "@/components/file-uploader";
-import { LOGO_REQUIREMENTS } from "@/utils/image-validation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,14 +19,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { Taxonomies } from "@/types/case-studies";
+import { LOGO_REQUIREMENTS } from "@/utils/image-validation";
 
 type EditingClient =
   | Taxonomies["clients"][number]
   | {
-      id?: string;
-      name: string;
-      logoUrl: string | null;
-    };
+    id?: string;
+    name: string;
+    logoUrl: string | null;
+  };
 
 export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
   const router = useRouter();
@@ -144,19 +144,19 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
 
       <div className="mt-6 grid gap-3">
         {taxonomies.clients.map((c) => (
-          <Card
+          <div
             key={c.id}
-            className="flex items-center justify-between gap-3 p-4"
+            className="flex items-center justify-between gap-3 p-4 border bg-card text-card-foreground shadow-sm"
           >
             <div className="flex items-center gap-4">
               {c.logoUrl ? (
                 <img
                   src={c.logoUrl}
                   alt=""
-                  className="h-12 w-12 rounded border object-contain bg-white"
+                  className="h-12 w-12  border object-contain bg-white"
                 />
               ) : (
-                <div className="h-12 w-12 rounded bg-muted" />
+                <div className="h-12 w-12  bg-muted" />
               )}
               <div>
                 <div className="font-medium">{c.name}</div>
@@ -180,10 +180,10 @@ export function ClientsPage({ taxonomies }: { taxonomies: Taxonomies }) {
                 <TrashIcon size={16} />
               </Button>
             </div>
-          </Card>
+          </div>
         ))}
         {!taxonomies.clients.length && (
-          <div className="rounded-md border border-dashed py-12 text-center text-sm text-muted-foreground">
+          <div className="border border-dashed py-12 text-center text-sm text-muted-foreground">
             No clients yet.
           </div>
         )}

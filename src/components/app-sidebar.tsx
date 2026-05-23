@@ -1,5 +1,4 @@
 "use client";
-
 import { RowsIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -22,10 +21,8 @@ const navItems = [
   { title: "Taxonomies", url: "/taxonomies" },
   { title: "Shares", url: "/shares" },
 ];
-
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
-
   return (
     <Sidebar variant="floating" {...props}>
       <SidebarHeader>

@@ -5,22 +5,7 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: "*",
-        disallow: "/",
-      },
-      {
-        userAgent: "facebookexternalhit",
-        allow: "/",
-      },
-      {
-        userAgent: "Twitterbot",
-        allow: "/",
-      },
-      {
-        userAgent: "WhatsApp",
-        allow: "/",
-      },
-      {
-        userAgent: "WhatsApp/2.24.4",
+        disallow: ["/api/", "/admin/"],
         allow: "/",
       },
     ],

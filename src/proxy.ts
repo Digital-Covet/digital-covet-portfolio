@@ -22,6 +22,10 @@ function isPublicRoute(pathname: string): boolean {
   );
 }
 
+function isShareRoute(pathname: string): boolean {
+  return PUBLIC_SHARE_TOKEN_PATTERN.test(pathname);
+}
+
 function shouldPassthrough(pathname: string): boolean {
   return (
     pathname.startsWith("/_next") ||
@@ -94,8 +98,10 @@ const STATE_HANDLERS: Record<
       ? NextResponse.next()
       : NextResponse.redirect(new URL(ROUTES.SETUP_2FA, request.url)),
 
-  AUTHENTICATED_ON_PUBLIC: (request) =>
-    NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url)),
+  AUTHENTICATED_ON_PUBLIC: (request, pathname) =>
+    isShareRoute(pathname)
+      ? NextResponse.next()
+      : NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url)),
 
   AUTHENTICATED: () => NextResponse.next(),
 };

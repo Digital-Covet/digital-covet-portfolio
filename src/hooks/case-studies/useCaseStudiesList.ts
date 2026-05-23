@@ -31,9 +31,20 @@ export type CaseStudiesListViewModel = {
   cancelDelete: () => void;
 };
 
-export function useCaseStudiesList(): CaseStudiesListViewModel {
-  const [studies, setStudies] = useState<CaseStudyListItem[]>([]);
-  const [nextCursor, setNextCursor] = useState<string | null>(null);
+interface UseCaseStudiesListOptions {
+  initialStudies?: CaseStudyListItem[];
+  initialNextCursor?: string | null;
+}
+
+export function useCaseStudiesList(
+  options: UseCaseStudiesListOptions = {},
+): CaseStudiesListViewModel {
+  const [studies, setStudies] = useState<CaseStudyListItem[]>(
+    options.initialStudies ?? [],
+  );
+  const [nextCursor, setNextCursor] = useState<string | null>(
+    options.initialNextCursor ?? null,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
@@ -80,8 +91,14 @@ export function useCaseStudiesList(): CaseStudiesListViewModel {
     [statusFilter, debouncedQuery],
   );
 
+  const hasInitialData = useRef(!!options.initialStudies);
+
   // Initial load + refresh on filter changes
   useEffect(() => {
+    if (hasInitialData.current) {
+      hasInitialData.current = false;
+      return;
+    }
     load();
   }, [load]);
 

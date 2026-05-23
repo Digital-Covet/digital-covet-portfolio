@@ -12,10 +12,10 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { formatDistanceToNow } from "date-fns";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useMemo } from "react";
 import { ExportButton } from "@/components/dashboard/ExportButton";
-import { ViewsChart } from "@/components/dashboard/ViewsChart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,26 +27,29 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useDashboardData } from "@/hooks/useDashboardData";
+import type { DashboardData } from "@/hooks/useDashboardData";
 import { useDashboardDerivedData } from "@/hooks/useDashboardDerivedData";
 import { useDashboardFilters } from "@/hooks/useDashboardFilters";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import type { ActivityItem } from "@/utils/buildActivityFeed";
 import { getShareStatus } from "@/utils/shareStatus";
 
-export function DashboardView() {
-  const { data, loading, error } = useDashboardData();
+const ViewsChart = dynamic(
+  () => import("@/components/dashboard/ViewsChart").then((m) => m.ViewsChart),
+  { ssr: false },
+);
 
+interface DashboardViewProps {
+  initialData: DashboardData;
+}
+
+export function DashboardView({ initialData }: DashboardViewProps) {
   const filters = useDashboardFilters();
 
   const derived = useDashboardDerivedData({
-    studies: data?.studies ?? [],
-    shares: data?.shares ?? [],
-    viewStats: data?.viewStats ?? {
-      viewCountByShareId: {},
-      totalViews: 0,
-      dailyBuckets: [],
-    },
+    studies: initialData.studies,
+    shares: initialData.shares,
+    viewStats: initialData.viewStats,
     industryId: filters.industryId,
     clientId: filters.clientId,
     rangeStart: filters.rangeStart,
@@ -60,39 +63,10 @@ export function DashboardView() {
     [derived.keyBusinessBreakdown],
   );
 
-  const taxonomies = data?.taxonomies ?? {
-    industries: [],
-    categories: [],
-    services: [],
-    sectors: [],
-    keyBusinesses: [],
-    businessModels: [],
-    clients: [],
-  };
-
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-7xl p-6 md:p-10">
-        <div className="text-sm text-muted-foreground">Loading dashboard…</div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="mx-auto max-w-7xl p-6 md:p-10">
-        <Card>
-          <CardContent className="p-6 text-sm text-destructive">
-            Failed to load dashboard: {error}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const { taxonomies } = initialData;
 
   return (
-    <div className="mx-auto max-w-7xl p-6 md:p-10">
-      {}
+    <div className="mx-auto w-full max-w-7xl p-6 md:p-10 min-w-0">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
@@ -102,7 +76,6 @@ export function DashboardView() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {}
           <ExportButton
             filteredStudies={derived.filteredStudies}
             filteredShares={derived.filteredShares}
@@ -136,7 +109,6 @@ export function DashboardView() {
         </div>
       </div>
 
-      {}
       <Card className="mt-6">
         <CardContent className="flex flex-wrap items-end gap-3 p-4">
           <div className="flex flex-col gap-1">
@@ -172,7 +144,6 @@ export function DashboardView() {
             >
               Industry
             </Label>
-            {}
             <Select
               value={filters.industryId}
               onValueChange={(v) => filters.setIndustryId(v ?? "all")}
@@ -182,8 +153,8 @@ export function DashboardView() {
                   {filters.industryId === "all"
                     ? "All industries"
                     : taxonomies.industries.find(
-                        (i) => i.id === filters.industryId,
-                      )?.name}
+                      (i) => i.id === filters.industryId,
+                    )?.name}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -213,7 +184,7 @@ export function DashboardView() {
                   {filters.clientId === "all"
                     ? "All clients"
                     : taxonomies.clients.find((c) => c.id === filters.clientId)
-                        ?.name}
+                      ?.name}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -235,7 +206,6 @@ export function DashboardView() {
         </CardContent>
       </Card>
 
-      {}
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={<FileTextIcon size={16} />}
@@ -263,7 +233,6 @@ export function DashboardView() {
         />
       </div>
 
-      {}
       <Card className="mt-6">
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -289,12 +258,13 @@ export function DashboardView() {
           </Select>
         </CardHeader>
         <CardContent>
-          <ViewsChart buckets={derived.chartBuckets} colors={themeColors} />
+          <div className="h-65 w-full">
+            <ViewsChart buckets={derived.chartBuckets} colors={themeColors} />
+          </div>
         </CardContent>
       </Card>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        {}
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -313,7 +283,6 @@ export function DashboardView() {
           </CardContent>
         </Card>
 
-        {}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Work by industry</CardTitle>
@@ -345,7 +314,6 @@ export function DashboardView() {
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-3">
-        {}
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Top clients</CardTitle>
@@ -381,7 +349,6 @@ export function DashboardView() {
           </CardContent>
         </Card>
 
-        {}
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-base">Most viewed shares</CardTitle>
@@ -471,11 +438,10 @@ function ActivityRow({ item }: { item: ActivityItem }) {
       className="flex items-start gap-3 rounded-md p-2 transition-colors hover:bg-muted"
     >
       <div
-        className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${
-          item.type === "case_study"
+        className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${item.type === "case_study"
             ? "bg-primary/10 text-primary"
             : "bg-secondary text-secondary-foreground"
-        }`}
+          }`}
       >
         {item.type === "case_study" ? (
           item.action === "created" ? (

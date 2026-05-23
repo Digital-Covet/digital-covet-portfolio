@@ -1,10 +1,6 @@
 "use client";
 
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import remarkGfm from "remark-gfm";
-import rehypeKatex from "rehype-katex";
-
+import Image from "next/image";
 import {
   ArrowClockwiseIcon,
   ArrowLeftIcon,
@@ -16,6 +12,10 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { use, useEffect, useState, useTransition } from "react";
+import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -182,7 +182,14 @@ export default function SharePage({
     <main className="min-h-screen bg-background">
       {}
       <div className="border-b bg-linear-to-br from-primary/5 to-transparent">
-        <div className="mx-auto max-w-6xl px-6 py-16 md:py-24">
+        <div className="mx-auto max-w-6xl px-6 py-12 md:py-16">
+          <Image
+            src="/logo-no-aspect.svg"
+            alt="Digital Covet"
+            width={834}
+            height={271}
+            className="mb-6 h-auto w-48"
+          />
           <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Curated Portfolio
           </div>
@@ -389,7 +396,12 @@ function CaseStudyDetail({
                   onClick={() => setGalleryIndex(i)}
                   className="cursor-zoom-in overflow-hidden rounded-lg border transition-shadow hover:shadow-lg"
                 >
-                  <img src={u} alt={`Gallery image ${i + 1}`} loading="lazy" className="aspect-video w-full object-cover" />
+                  <img
+                    src={u}
+                    alt={`Gallery image ${i + 1}`}
+                    loading="lazy"
+                    className="aspect-video w-full object-cover"
+                  />
                 </button>
               ))}
             </div>

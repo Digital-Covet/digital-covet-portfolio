@@ -66,9 +66,7 @@ function classifyRequest(
   const { user } = session;
 
   if (!user.passwordChanged) return "NEEDS_PASSWORD_SETUP";
-
   if (!user.twoFactorEnabled) return "NEEDS_2FA_SETUP";
-
   if (isPublicRoute(pathname)) return "AUTHENTICATED_ON_PUBLIC";
 
   return "AUTHENTICATED";
@@ -106,11 +104,39 @@ const STATE_HANDLERS: Record<
   AUTHENTICATED: () => NextResponse.next(),
 };
 
+function buildCsp(nonce: string, isDev: boolean): string {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+    "img-src 'self' blob: data:",
+    "font-src 'self'",
+    "connect-src 'self' https://va.vercel-scripts.com",
+    "frame-src 'self' https://www.youtube.com https://player.vimeo.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+  ].join("; ");
+}
+
 export async function proxy(request: NextRequest): Promise<NextResponse> {
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const isDev = process.env.NODE_ENV === "development";
+  const cspHeader = buildCsp(nonce, isDev);
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", cspHeader);
+
   const { pathname } = request.nextUrl;
 
   if (shouldPassthrough(pathname)) {
-    return NextResponse.next();
+    const response = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+    response.headers.set("Content-Security-Policy", cspHeader);
+    return response;
   }
 
   let session: Awaited<ReturnType<typeof auth.api.getSession>> | null = null;
@@ -129,9 +155,24 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const pending2FA = !session?.user && hasPending2FACookie(request);
 
   const state = classifyRequest(session, pending2FA, pathname);
-  return STATE_HANDLERS[state](request, pathname);
+  const response = STATE_HANDLERS[state](request, pathname);
+
+  if (!response.headers.get("location")) {
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  response.headers.set("Content-Security-Policy", cspHeader);
+  return response;
 }
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    {
+      source: "/((?!api|_next/static|_next/image|favicon.ico).*)",
+      missing: [
+        { type: "header", key: "next-router-prefetch" },
+        { type: "header", key: "purpose", value: "prefetch" },
+      ],
+    },
+  ],
 };

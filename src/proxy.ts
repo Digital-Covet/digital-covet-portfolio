@@ -136,6 +136,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       request: { headers: requestHeaders },
     });
     response.headers.set("Content-Security-Policy", cspHeader);
+    response.headers.set("X-Frame-Options", "DENY");
     return response;
   }
 
@@ -158,10 +159,16 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const response = STATE_HANDLERS[state](request, pathname);
 
   if (!response.headers.get("location")) {
-    return NextResponse.next({ request: { headers: requestHeaders } });
+    const nextResponse = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+    nextResponse.headers.set("Content-Security-Policy", cspHeader);
+    nextResponse.headers.set("X-Frame-Options", "DENY");
+    return nextResponse;
   }
 
   response.headers.set("Content-Security-Policy", cspHeader);
+  response.headers.set("X-Frame-Options", "DENY");
   return response;
 }
 

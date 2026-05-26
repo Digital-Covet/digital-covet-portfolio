@@ -2,6 +2,11 @@
 
 import type { Icon } from "@phosphor-icons/react";
 import { CodeIcon, PenNibIcon, StrategyIcon } from "@phosphor-icons/react";
+import {
+  Card,
+  CardContent,
+  CardTitle,
+} from "@/components/ui/card";
 
 interface Service {
   icon: Icon;
@@ -46,23 +51,25 @@ export function Services() {
           {services.map((service, index) => {
             const IconComponent = service.icon;
             return (
-              <div
+              <Card
                 key={service.title}
-                className="bg-card p-10 border border-border flex flex-col h-full group hover:border-primary transition-all duration-300 fade-up"
+                className="p-10 border border-border group hover:border-primary transition-all duration-300 fade-up h-full gap-0"
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 <div className="w-14 h-14 bg-muted flex items-center justify-center mb-8 group-hover:bg-primary/10 transition-colors">
                   <IconComponent className="text-3xl text-primary" />
                 </div>
 
-                <h3 className="text-2xl font-semibold mb-4 group-hover:text-primary transition-colors">
+                <CardTitle className="text-2xl font-semibold mb-4 group-hover:text-primary transition-colors px-0">
                   {service.title}
-                </h3>
+                </CardTitle>
 
-                <p className="text-foreground/70 leading-relaxed grow">
-                  {service.description}
-                </p>
-              </div>
+                <CardContent className="px-0 grow text-base">
+                  <p className="text-foreground/70 leading-relaxed">
+                    {service.description}
+                  </p>
+                </CardContent>
+              </Card>
             );
           })}
         </div>

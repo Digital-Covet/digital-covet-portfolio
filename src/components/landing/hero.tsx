@@ -3,6 +3,7 @@
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import CreativeGirl from "@/assets/creative-girl";
+import { Button } from "@/components/ui/button";
 
 export function Hero() {
   return (
@@ -19,13 +20,14 @@ export function Hero() {
           forward-thinking brands.
         </p>
 
-        <Link
-          href="https://digitalcovet.com/"
-          className="btn-primary font-sans inline-flex items-center gap-3 bg-primary text-primary-foreground px-10 py-4 text-sm font-semibold uppercase tracking-widest group"
+        <Button
+          render={<Link href="https://digitalcovet.com/" />}
+          nativeButton={false}
+          className="px-10 py-4 h-auto text-sm font-semibold uppercase tracking-widest gap-3 font-sans"
         >
           Start a Project
           <ArrowRightIcon />
-        </Link>
+        </Button>
       </div>
 
       <div className="flex-1 w-full relative h-105 md:h-155 image-wrapper">

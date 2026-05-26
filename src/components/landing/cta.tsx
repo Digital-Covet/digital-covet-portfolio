@@ -2,6 +2,7 @@
 
 import { ArrowUpRightIcon } from "@phosphor-icons/react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export function FinalCTA() {
   return (
@@ -10,13 +11,14 @@ export function FinalCTA() {
         <h2 className="text-5xl md:text-7xl font-bold mb-10">
           Ready to Build the Future?
         </h2>
-        <Link
-          href="https://digitalcovet.com/contact-us/"
-          className="btn-primary inline-flex items-center hover:transition-colors hover:bg-primary-foreground hover:text-foreground gap-3 bg-primary text-primary-foreground px-12 py-5 text-lg font-semibold uppercase tracking-widest"
+        <Button
+          render={<Link href="https://digitalcovet.com/contact-us/" />}
+          nativeButton={false}
+          className="px-12 py-5 h-auto text-lg font-semibold uppercase tracking-widest gap-3 hover:bg-primary-foreground hover:text-foreground"
         >
           Partner with Digital Covet
           <ArrowUpRightIcon size={16} />
-        </Link>
+        </Button>
       </div>
     </section>
   );

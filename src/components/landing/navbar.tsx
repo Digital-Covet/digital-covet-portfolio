@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LogoComponent from "@/assets/logo";
 
 interface NavLink {
   label: string;
@@ -15,9 +16,9 @@ export function Navbar() {
       <div className="max-w-[1440px] mx-auto px-6 md:px-16 h-20 flex items-center justify-between">
         <Link
           href="/"
-          className="font-bold text-2xl tracking-tight flex items-center gap-2 hover:scale-105 transition-transform duration-300"
+          className="flex items-center gap-2 hover:scale-105 transition-transform duration-300"
         >
-          Digital Covet
+          <LogoComponent className="h-8 w-auto" />
         </Link>
 
         <div className="hidden md:flex items-center gap-10">

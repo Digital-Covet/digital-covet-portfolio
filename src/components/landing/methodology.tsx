@@ -1,3 +1,10 @@
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
 export function Methodology() {
   const steps = [
     {
@@ -27,17 +34,23 @@ export function Methodology() {
 
       <div className="grid md:grid-cols-3">
         {steps.map((step, i) => (
-          <div
+          <Card
             key={step.num}
-            className="text-center fade-up flex flex-col items-center"
+            className="text-center bg-transparent ring-0 shadow-none border-0 p-0 gap-0 items-center fade-up"
             style={{ animationDelay: `${i * 100}ms` }}
           >
-            <span className="text-sm font-bold text-primary/10 leading-none mb-4">
-              {step.num}
-            </span>
-            <h3 className="text-3xl font-semibold mb-4">{step.title}</h3>
-            <p className="text-foreground/70 max-w-sm">{step.desc}</p>
-          </div>
+            <CardHeader className="p-0 border-0 gap-0 items-center flex flex-col">
+              <span className="text-sm font-bold text-primary/10 leading-none mb-4">
+                {step.num}
+              </span>
+              <CardTitle className="text-3xl font-semibold mb-4 p-0">
+                {step.title}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0 text-base">
+              <p className="text-foreground/70 max-w-sm">{step.desc}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </section>

@@ -3,6 +3,7 @@
 import { ArrowUpRightIcon } from "@phosphor-icons/react";
 import Link from "next/link";
 import CollaborativeTeamwork from "@/assets/collaboration-teamwork";
+import { Button } from "@/components/ui/button";
 
 export function About() {
   return (
@@ -35,12 +36,14 @@ export function About() {
             demonstrating the very capabilities we offer to our elite clientele.
           </blockquote>
 
-          <Link
-            href="https://digitalcovet.com/"
-            className="inline-flex items-center gap-2 border border-foreground px-8 py-4 hover:bg-foreground hover:text-background transition-all font-medium text-sm uppercase tracking-widest"
+          <Button
+            render={<Link href="https://digitalcovet.com/" />}
+            nativeButton={false}
+            variant="outline"
+            className="border-foreground px-8 py-4 h-auto text-sm uppercase tracking-widest hover:bg-foreground hover:text-background"
           >
             View Parent Agency <ArrowUpRightIcon size={16} />
-          </Link>
+          </Button>
         </div>
       </div>
     </section>

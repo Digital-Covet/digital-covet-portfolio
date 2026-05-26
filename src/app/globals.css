@@ -1,10 +1,10 @@
 @import "katex/dist/katex.min.css";
 @import "tailwindcss";
-@plugin "@tailwindcss/typography";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@uiw/react-md-editor/markdown-editor.css";
 @import "@uiw/react-markdown-preview/markdown.css";
+@plugin "@tailwindcss/typography";
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
@@ -56,7 +56,9 @@
   --foreground: oklch(0.26 0.01 300); /* Near Black */
 
   /* Cards & Popovers */
-  --card: oklch(0.98 0.005 330); /* Very subtle warm gray (softer than pure white) */
+  --card: oklch(
+    0.98 0.005 330
+  ); /* Very subtle warm gray (softer than pure white) */
   --card-foreground: oklch(0.26 0.01 300); /* Near Black */
   --popover: oklch(1 0 0); /* White */
   --popover-foreground: oklch(0.26 0.01 300); /* Near Black */
@@ -71,14 +73,18 @@
 
   /* Muted & Subtle (Soft Gray) */
   --muted: oklch(0.93 0.01 330); /* Soft Gray */
-  --muted-foreground: oklch(0.45 0.01 300); /* Medium Gray (Ensuring soft gray is NEVER text) */
+  --muted-foreground: oklch(
+    0.45 0.01 300
+  ); /* Medium Gray (Ensuring soft gray is NEVER text) */
 
   /* Accents (Red Tint) */
   --accent: oklch(0.5 0.18 25 / 10%); /* Red Tint */
   --accent-foreground: oklch(0.5 0.18 25); /* Brand Red (for text on tint) */
 
   /* System */
-  --destructive: oklch(0.577 0.245 27.325); /* Kept standard shadcn destructive */
+  --destructive: oklch(
+    0.577 0.245 27.325
+  ); /* Kept standard shadcn destructive */
   --border: oklch(0.93 0.01 330); /* Soft Gray */
   --input: oklch(0.93 0.01 330); /* Soft Gray */
   --ring: oklch(0.5 0.18 25); /* Brand Red */
@@ -99,7 +105,9 @@
   --sidebar-primary-foreground: oklch(1 0 0); /* White */
   --sidebar-accent: oklch(0.5 0.18 25 / 10%); /* Red Tint */
   --sidebar-accent-foreground: oklch(0.5 0.18 25); /* Brand Red */
-  --sidebar-border: oklch(0.9 0.01 330); /* Slightly darker soft gray for borders */
+  --sidebar-border: oklch(
+    0.9 0.01 330
+  ); /* Slightly darker soft gray for borders */
   --sidebar-ring: oklch(0.5 0.18 25); /* Brand Red */
 }
 
@@ -127,11 +135,18 @@
   --muted-foreground: oklch(0.7 0.01 300); /* Medium Light Gray */
 
   /* Accents (Red Tint) */
-  --accent: oklch(0.5 0.18 25 / 15%); /* Red Tint (Alpha bumped for dark bg visibility) */
-  --accent-foreground: oklch(0.65 0.18 25); /* Lighter Brand Red for dark mode text */
+  --accent: oklch(
+    0.5 0.18 25 /
+    15%
+  ); /* Red Tint (Alpha bumped for dark bg visibility) */
+  --accent-foreground: oklch(
+    0.65 0.18 25
+  ); /* Lighter Brand Red for dark mode text */
 
   /* System */
-  --destructive: oklch(0.704 0.191 22.216); /* Kept standard dark shadcn destructive */
+  --destructive: oklch(
+    0.704 0.191 22.216
+  ); /* Kept standard dark shadcn destructive */
   --border: oklch(0.37 0.01 300); /* Lighter Near Black for borders */
   --input: oklch(0.37 0.01 300); /* Lighter Near Black for inputs */
   --ring: oklch(0.5 0.18 25); /* Brand Red */
@@ -268,5 +283,60 @@
   }
   .share-markdown tr:nth-child(even) td {
     background-color: var(--muted);
+  }
+  .fade-up {
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeUpAnim 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+  .delay-200 {
+    animation-delay: 200ms;
+  }
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+
+  @keyframes fadeUpAnim {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .image-wrapper {
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+  }
+
+  .image-wrapper img {
+    transition:
+      transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+      filter 0.5s ease;
+  }
+
+  .image-wrapper:hover img {
+    transform: scale(1.05);
+    filter: grayscale(0%);
+  }
+
+  .btn-primary {
+    transition:
+      transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+      background-color 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    transform: scale(1.02);
+    background-color: hsl(var(--primary) / 0.9);
+  }
+
+  /* Enhanced focus states */
+  .btn-primary:focus-visible {
+    outline: 3px solid hsl(var(--primary));
+    outline-offset: 4px;
   }
 }

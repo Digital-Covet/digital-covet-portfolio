@@ -1,4 +1,14 @@
 import { redirect } from "next/navigation";
+import {
+  About,
+  FinalCTA,
+  Hero,
+  Methodology,
+  Navbar,
+  Services,
+  SocialProof,
+  Footer,
+} from "@/components/landing";
 import { getCurrentUser } from "@/lib/auth.server";
 
 export default async function Home() {
@@ -6,7 +16,18 @@ export default async function Home() {
 
   if (user) {
     redirect("/dashboard");
-  } else {
-    redirect("/auth/login");
   }
+
+  return (
+    <>
+      <Navbar />
+      <Hero />
+      <SocialProof />
+      <Services />
+      <Methodology />
+      <About />
+      <FinalCTA />
+      <Footer />
+    </>
+  );
 }

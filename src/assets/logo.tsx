@@ -4,7 +4,7 @@ const LogoComponent = (props: SVGProps<SVGSVGElement>) => (
   <svg
     data-name="Layer 1"
     xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 1080 1080"
+    viewBox="70 280 980 480"
     {...props}
   >
     <title>Digital Covet Logo</title>

@@ -3,7 +3,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { type AppRoute, ROUTES } from "@/lib/constants";
 
-const PUBLIC_ROUTES: AppRoute[] = [
+const PUBLIC_ROUTES: (AppRoute | "/")[] = [
+  "/",
   ROUTES.LOGIN,
   ROUTES.FORGOT_PASSWORD,
   ROUTES.RESET_PASSWORD,

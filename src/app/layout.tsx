@@ -1,6 +1,8 @@
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Jost, Rubik, Sora } from "next/font/google";
+import { headers } from "next/headers";
+import { connection } from "next/server";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -10,14 +12,16 @@ const jostSans = Jost({
   variable: "--font-jost",
 });
 
-const SoraSans = Sora({
+const soraSans = Sora({
   subsets: ["latin"],
   variable: "--font-sora",
 });
+
 const rubikSans = Rubik({
   subsets: ["latin"],
   variable: "--font-rubik",
 });
+
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
@@ -27,6 +31,7 @@ const interSans = Inter({
   subsets: ["latin"],
   variable: "--font-inter",
 });
+
 export const metadata: Metadata = {
   title: "Digital Covet Portfolio",
   description:
@@ -61,11 +66,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  await connection();
+  await headers(); // keeps the render path request-aware for nonce propagation
+
   return (
     <html
       lang="en"
@@ -76,7 +84,7 @@ export default function RootLayout({
         interSans.variable,
         rubikSans.variable,
         jostSans.variable,
-        SoraSans.variable,
+        soraSans.variable,
       )}
     >
       <body className="min-h-full flex flex-col">

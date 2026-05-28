@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
+
 import { auth } from "@/lib/auth";
 import { type AppRoute, ROUTES } from "@/lib/constants";
 
@@ -68,81 +69,114 @@ function classifyRequest(
 
   const { user } = session;
 
-  if (!user.passwordChanged) return "NEEDS_PASSWORD_SETUP";
-  if (!user.twoFactorEnabled) return "NEEDS_2FA_SETUP";
-  if (isPublicRoute(pathname)) return "AUTHENTICATED_ON_PUBLIC";
+  if (!user.passwordChanged) {
+    return "NEEDS_PASSWORD_SETUP";
+  }
+
+  if (!user.twoFactorEnabled) {
+    return "NEEDS_2FA_SETUP";
+  }
+
+  if (isPublicRoute(pathname)) {
+    return "AUTHENTICATED_ON_PUBLIC";
+  }
 
   return "AUTHENTICATED";
 }
 
-const STATE_HANDLERS: Record<
-  AuthState,
-  (request: NextRequest, pathname: string) => NextResponse
-> = {
-  PENDING_2FA_VERIFY: (request, pathname) =>
-    pathname === ROUTES.VERIFY_2FA
-      ? NextResponse.next()
-      : NextResponse.redirect(new URL(ROUTES.VERIFY_2FA, request.url)),
-
-  UNAUTHENTICATED: (request, pathname) =>
-    isPublicRoute(pathname)
-      ? NextResponse.next()
-      : NextResponse.redirect(new URL(ROUTES.LOGIN, request.url)),
-
-  NEEDS_PASSWORD_SETUP: (request, pathname) =>
-    pathname === ROUTES.SETUP_PASSWORD
-      ? NextResponse.next()
-      : NextResponse.redirect(new URL(ROUTES.SETUP_PASSWORD, request.url)),
-
-  NEEDS_2FA_SETUP: (request, pathname) =>
-    pathname === ROUTES.SETUP_2FA
-      ? NextResponse.next()
-      : NextResponse.redirect(new URL(ROUTES.SETUP_2FA, request.url)),
-
-  AUTHENTICATED_ON_PUBLIC: (request, pathname) =>
-    isShareRoute(pathname)
-      ? NextResponse.next()
-      : NextResponse.redirect(new URL(ROUTES.DASHBOARD, request.url)),
-
-  AUTHENTICATED: () => NextResponse.next(),
-};
-
 function buildCsp(nonce: string, isDev: boolean): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
+
+    // STRICT CSP
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""
+    }`,
+
+    // next/font + runtime styles
     `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+
     "img-src 'self' blob: data: https://lh3.googleusercontent.com",
-    "font-src 'self'",
+
+    "font-src 'self' data:",
+
     "connect-src 'self' https://va.vercel-scripts.com",
+
     "frame-src 'self' https://www.youtube.com https://player.vimeo.com",
+
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
+
+    // hardening
+    "upgrade-insecure-requests",
   ].join("; ");
 }
 
-export async function proxy(request: NextRequest): Promise<NextResponse> {
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const isDev = process.env.NODE_ENV === "development";
-  const cspHeader = buildCsp(nonce, isDev);
+function applySecurityHeaders(
+  response: NextResponse,
+  csp: string,
+): NextResponse {
+  response.headers.set("Content-Security-Policy", csp);
 
+  response.headers.set("X-Frame-Options", "DENY");
+
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+
+  response.headers.set("X-Content-Type-Options", "nosniff");
+
+  response.headers.set(
+    "Permissions-Policy",
+    "camera=(), microphone=(), geolocation=()",
+  );
+
+  return response;
+}
+
+export async function proxy(request: NextRequest): Promise<NextResponse> {
+  /**
+   * Generate cryptographically secure nonce
+   */
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+
+  const isDev = process.env.NODE_ENV === "development";
+
+  const csp = buildCsp(nonce, isDev);
+
+  /**
+   * Forward nonce to App Router render pipeline.
+   *
+   * CRITICAL:
+   * This is how Next.js discovers the nonce
+   * during SSR and injects it into:
+   *
+   * - framework scripts
+   * - hydration runtime
+   * - chunk loaders
+   * - inline bootstrap scripts
+   */
   const requestHeaders = new Headers(request.headers);
+
   requestHeaders.set("x-nonce", nonce);
-  requestHeaders.set("Content-Security-Policy", cspHeader);
 
   const { pathname } = request.nextUrl;
 
+  /**
+   * Static assets / API passthrough
+   */
   if (shouldPassthrough(pathname)) {
     const response = NextResponse.next({
-      request: { headers: requestHeaders },
+      request: {
+        headers: requestHeaders,
+      },
     });
-    response.headers.set("Content-Security-Policy", cspHeader);
-    response.headers.set("X-Frame-Options", "DENY");
-    return response;
+
+    return applySecurityHeaders(response, csp);
   }
 
+  /**
+   * Session lookup
+   */
   let session: Awaited<ReturnType<typeof auth.api.getSession>> | null = null;
 
   try {
@@ -152,38 +186,130 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       }),
     });
   } catch (error) {
-    console.error("[middleware] Session validation error:", error);
+    console.error("[proxy] Session validation error:", error);
+
     session = null;
   }
 
   const pending2FA = !session?.user && hasPending2FACookie(request);
 
   const state = classifyRequest(session, pending2FA, pathname);
-  const response = STATE_HANDLERS[state](request, pathname);
 
-  if (!response.headers.get("location")) {
-    const nextResponse = NextResponse.next({
-      request: { headers: requestHeaders },
-    });
-    nextResponse.headers.set("Content-Security-Policy", cspHeader);
-    nextResponse.headers.set("X-Frame-Options", "DENY");
-    return nextResponse;
+  /**
+   * Route handling
+   */
+  switch (state) {
+    case "PENDING_2FA_VERIFY": {
+      if (pathname === ROUTES.VERIFY_2FA) {
+        const response = NextResponse.next({
+          request: {
+            headers: requestHeaders,
+          },
+        });
+
+        return applySecurityHeaders(response, csp);
+      }
+
+      const response = NextResponse.redirect(
+        new URL(ROUTES.VERIFY_2FA, request.url),
+      );
+
+      return applySecurityHeaders(response, csp);
+    }
+
+    case "UNAUTHENTICATED": {
+      if (isPublicRoute(pathname)) {
+        const response = NextResponse.next({
+          request: {
+            headers: requestHeaders,
+          },
+        });
+
+        return applySecurityHeaders(response, csp);
+      }
+
+      const response = NextResponse.redirect(
+        new URL(ROUTES.LOGIN, request.url),
+      );
+
+      return applySecurityHeaders(response, csp);
+    }
+
+    case "NEEDS_PASSWORD_SETUP": {
+      if (pathname === ROUTES.SETUP_PASSWORD) {
+        const response = NextResponse.next({
+          request: {
+            headers: requestHeaders,
+          },
+        });
+
+        return applySecurityHeaders(response, csp);
+      }
+
+      const response = NextResponse.redirect(
+        new URL(ROUTES.SETUP_PASSWORD, request.url),
+      );
+
+      return applySecurityHeaders(response, csp);
+    }
+
+    case "NEEDS_2FA_SETUP": {
+      if (pathname === ROUTES.SETUP_2FA) {
+        const response = NextResponse.next({
+          request: {
+            headers: requestHeaders,
+          },
+        });
+
+        return applySecurityHeaders(response, csp);
+      }
+
+      const response = NextResponse.redirect(
+        new URL(ROUTES.SETUP_2FA, request.url),
+      );
+
+      return applySecurityHeaders(response, csp);
+    }
+
+    case "AUTHENTICATED_ON_PUBLIC": {
+      if (isShareRoute(pathname)) {
+        const response = NextResponse.next({
+          request: {
+            headers: requestHeaders,
+          },
+        });
+
+        return applySecurityHeaders(response, csp);
+      }
+
+      const response = NextResponse.redirect(
+        new URL(ROUTES.DASHBOARD, request.url),
+      );
+
+      return applySecurityHeaders(response, csp);
+    }
+
+    default: {
+      const response = NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
+
+      return applySecurityHeaders(response, csp);
+    }
   }
-
-  response.headers.set("Content-Security-Policy", cspHeader);
-  response.headers.set("X-Frame-Options", "DENY");
-  return response;
 }
 
 export const config = {
   matcher: [
-    {
-      source: "/((?!api|_next/static|_next/image|favicon.ico).*)",
-      missing: [
-        { type: "header", key: "next-router-prefetch" },
-        { type: "header", key: "purpose", value: "prefetch" },
-        { type: "header", key: "rsc" },
-      ],
-    },
+    /**
+     * Exclude:
+     * - api routes
+     * - next static assets
+     * - next image optimizer
+     * - favicon
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };

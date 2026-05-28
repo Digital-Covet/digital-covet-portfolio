@@ -110,7 +110,7 @@ function buildCsp(nonce: string, isDev: boolean): string {
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
-    "img-src 'self' blob: data:",
+    "img-src 'self' blob: data: https://lh3.googleusercontent.com",
     "font-src 'self'",
     "connect-src 'self' https://va.vercel-scripts.com",
     "frame-src 'self' https://www.youtube.com https://player.vimeo.com",

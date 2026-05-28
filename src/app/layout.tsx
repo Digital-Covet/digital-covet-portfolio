@@ -1,6 +1,6 @@
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, Jost, Rubik } from "next/font/google";
+import { Inter, JetBrains_Mono, Jost, Rubik, Sora } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,10 @@ const jostSans = Jost({
   variable: "--font-jost",
 });
 
+const SoraSans = Sora({
+  subsets: ["latin"],
+  variable: "--font-sora",
+});
 const rubikSans = Rubik({
   subsets: ["latin"],
   variable: "--font-rubik",
@@ -72,6 +76,7 @@ export default function RootLayout({
         interSans.variable,
         rubikSans.variable,
         jostSans.variable,
+        SoraSans.variable,
       )}
     >
       <body className="min-h-full flex flex-col">

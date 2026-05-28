@@ -1,14 +1,13 @@
 import { redirect } from "next/navigation";
 import {
-  About,
-  FinalCTA,
-  Hero,
-  Methodology,
-  Navbar,
-  Services,
-  SocialProof,
+  CTASection,
   Footer,
-} from "@/components/landing";
+  HeroSection,
+  IntroSection,
+  ManifestoSection,
+  SelectedWorksSection,
+  StatsSection,
+} from "@/components/landing/pages";
 import { getCurrentUser } from "@/lib/auth.server";
 
 export default async function Home() {
@@ -19,15 +18,18 @@ export default async function Home() {
   }
 
   return (
-    <>
-      <Navbar />
-      <Hero />
-      <SocialProof />
-      <Services />
-      <Methodology />
-      <About />
-      <FinalCTA />
+    <div className="bg-covet-dark text-covet-light">
+      <HeroSection />
+
+      <main className="bg-white text-black rounded-t-3xl -mt-10 relative z-20">
+        <IntroSection />
+        <StatsSection />
+        <ManifestoSection />
+        <SelectedWorksSection />
+        <CTASection />
+      </main>
+
       <Footer />
-    </>
+    </div>
   );
 }

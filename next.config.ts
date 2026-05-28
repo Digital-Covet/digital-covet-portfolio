@@ -2,6 +2,17 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        port: "",
+        pathname: "/**",
+        search: "",
+      },
+    ],
+  },
   async headers() {
     return [
       {
@@ -18,6 +29,10 @@ const nextConfig: NextConfig = {
           {
             key: "X-Content-Type-Options",
             value: "nosniff",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: "img-src 'self' blob: data: https://lh3.googleusercontent.com;",
           },
         ],
       },

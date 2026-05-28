@@ -1,4 +1,5 @@
 import type React from "react";
+import { redirect } from "next/navigation";
 import { AppSidebar } from "@/components/app-sidebar";
 import { DynamicBreadcrumb } from "@/components/dynamic-breadcrumb";
 import { Separator } from "@/components/ui/separator";
@@ -8,7 +9,12 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { UserDropdown } from "@/components/user-dropdown";
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+import { getCurrentUser } from "@/lib/auth.server";
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/auth/login");
+  if (!user.passwordChanged) redirect("/auth/setup-password");
+  if (!user.twoFactorEnabled) redirect("/auth/setup-2fa");
   return (
     <SidebarProvider
       style={

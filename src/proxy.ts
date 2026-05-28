@@ -18,8 +18,10 @@ const PUBLIC_SHARE_TOKEN_PATTERN = /^\/shares\/[a-f0-9-]{36}$/;
 
 function isPublicRoute(pathname: string): boolean {
   return (
-    PUBLIC_ROUTES.some((route) => pathname.startsWith(route)) ||
-    PUBLIC_SHARE_TOKEN_PATTERN.test(pathname)
+    PUBLIC_ROUTES.some((route) => {
+      if (route === "/") return pathname === "/";
+      return pathname.startsWith(route);
+    }) || PUBLIC_SHARE_TOKEN_PATTERN.test(pathname)
   );
 }
 
@@ -180,6 +182,7 @@ export const config = {
       missing: [
         { type: "header", key: "next-router-prefetch" },
         { type: "header", key: "purpose", value: "prefetch" },
+        { type: "header", key: "rsc" },
       ],
     },
   ],

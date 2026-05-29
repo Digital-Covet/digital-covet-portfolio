@@ -24,8 +24,7 @@ export function ManifestoSection() {
               Manifesto
             </span>
             <h2 className="text-[clamp(3rem,8vw,6rem)] font-bold leading-[0.9] tracking-tighter uppercase mb-8">
-              THE <span className="text-covet-green text-outline">COVET</span>{" "}
-              EDGE
+              THE <span className="text-covet-green">COVET</span> EDGE
             </h2>
             <p className="text-2xl md:text-3xl font-light leading-snug max-w-4xl text-gray-400">
               We don't just design; we define the digital landscape through raw,

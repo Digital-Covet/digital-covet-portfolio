@@ -29,7 +29,7 @@ export function GridShutterItem({ item }: GridShutterItemProps) {
         src={item.image}
       />
       <div className={`absolute top-0 left-0 ${paddingClass} z-20`}>
-        <span className="bg-[#D9FF00] text-black px-2 py-1 text-[10px] font-bold uppercase tracking-widest">
+        <span className="bg-covet-green text-white px-2 py-1 text-[10px] font-bold uppercase tracking-widest">
           {item.category}
         </span>
       </div>

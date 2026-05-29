@@ -15,7 +15,7 @@
   --font-sora: "Sora", sans-serif;
 
   /* Digital Covet Custom Colors */
-  --color-covet-green: #d9ff00;
+  --color-covet-green: var(--color-primary);
   --color-covet-dark: #0a0a0a;
   --color-covet-light: #f5f5f5;
 
@@ -149,7 +149,7 @@
   /* Digital Covet Custom Utilities */
   .text-outline {
     color: transparent;
-    -webkit-text-stroke: 1px #d9ff00;
+    -webkit-text-stroke: 1px var(--color-primary);
   }
 
   /* Reveal Animations */
@@ -191,7 +191,7 @@
     height: 2px;
     bottom: -4px;
     left: 0;
-    background-color: #d9ff00;
+    background-color: var(--color-primary);
     transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
@@ -262,7 +262,7 @@
     top: 0;
     width: 50%;
     height: 100%;
-    background: #d9ff00;
+    background: var(--color-primary);
     z-index: 10;
     transition: transform 0.6s cubic-bezier(0.77, 0, 0.175, 1);
     mix-blend-mode: overlay;

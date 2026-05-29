@@ -1,24 +1,18 @@
 import type { NavLink } from "@/types/landing";
 
 export const primaryNavLinks: NavLink[] = [
-  { href: "#", label: "Home", isActive: true },
-  { href: "#", label: "About" },
-  { href: "#", label: "Work" },
-  { href: "#", label: "Services" },
-  { href: "#", label: "Contact" },
-];
-
-export const secondaryNavLinks: NavLink[] = [
-  { href: "#", label: "Entertainment" },
-  { href: "#", label: "Developing" },
-  { href: "#", label: "Advertising" },
-  { href: "#", label: "Branding" },
+  { href: "https://digitalcovet.com/", label: "Home", isActive: true },
+  { href: "https://digitalcovet.com/about-us/", label: "About" },
+  { href: "#work", label: "Work" },
+  { href: "https://digitalcovet.com/our-services/", label: "Services" },
+  { href: "https://digitalcovet.com/contact-us/", label: "Contact" },
+  { href: "https://digitalcovet.com/our-team/", label: "Our Teams" },
 ];
 
 export const footerNavLinks: NavLink[] = [
-  { href: "#", label: "Home" },
-  { href: "#", label: "About" },
-  { href: "#", label: "Work" },
-  { href: "#", label: "Services" },
-  { href: "#", label: "Contact" },
+  { href: "https://digitalcovet.com/", label: "Home" },
+  { href: "https://digitalcovet.com/about-us/", label: "About" },
+  { href: "#work", label: "Work" },
+  { href: "https://digitalcovet.com/our-services/", label: "Services" },
+  { href: "https://digitalcovet.com/contact-us", label: "Contact" },
 ];

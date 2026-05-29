@@ -13,7 +13,10 @@ export function SelectedWorksSection() {
   useParallax(starRef, { speed: 2, rotate: true });
 
   return (
-    <section className="max-w-400 mx-auto px-6 py-24 relative bg-[#000000] text-[#e2e2e2]">
+    <section
+      id="work"
+      className="max-w-400 mx-auto px-6 py-24 relative bg-black text-[#e2e2e2]"
+    >
       <div
         ref={starRef}
         className="absolute right-6 top-24 text-3xl text-covet-green opacity-20"

@@ -26,7 +26,7 @@ export function IntroSection() {
 
           <Link
             href="#"
-            className="inline-block bg-black text-white px-8 py-4 text-sm font-semibold uppercase hover:bg-covet-green hover:text-black transition-colors mb-16"
+            className="inline-block bg-black text-white px-8 py-4 text-sm font-semibold uppercase hover:bg-covet-green transition-colors mb-16"
           >
             Let's Get Started
           </Link>
@@ -50,7 +50,7 @@ export function IntroSection() {
                   />
                 ))}
                 <div
-                  className="w-12 h-12 rounded-full bg-covet-green border-2 border-white flex items-center justify-center text-sm font-bold stagger-item"
+                  className="w-12 h-12 rounded-full bg-covet-green border-2 border-white text-white flex items-center justify-center text-sm font-bold stagger-item"
                   style={{ transitionDelay: "0.4s" }}
                 >
                   4.9/5

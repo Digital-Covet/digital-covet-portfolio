@@ -32,7 +32,7 @@ export function Footer() {
 
       <div className="max-w-400 mx-auto flex flex-col md:flex-row justify-between items-center text-xs text-gray-600">
         <p>Digital Covet © All rights reserved.</p>
-        <p>Copyright © 2024</p>
+        <p>Copyright © {new Date().getFullYear()}</p>
       </div>
     </footer>
   );

@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { services } from "@/data/landing/services";
 import { useInView } from "@/hooks/useInView";
 import { useParallax } from "@/hooks/useParallax";
-import { FeatureCard } from "../FeatureCard";
+import { ServiceCard } from "../ServiceCard";
 
 export function ServicesSection() {
   const { ref, isInView } = useInView();
@@ -41,8 +41,8 @@ export function ServicesSection() {
         <div
           className={`grid grid-cols-1 md:grid-cols-3 gap-0 border-t stagger-container ${isInView ? "active" : ""} border-[#333]`}
         >
-          {services.map((feature) => (
-            <FeatureCard key={feature.number} feature={feature} />
+          {services.map((services) => (
+            <ServiceCard key={services.number} services={services} />
           ))}
         </div>
       </div>

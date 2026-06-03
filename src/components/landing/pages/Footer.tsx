@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import LogoWhite from "@/assets/logo-white";
 import { footerNavLinks } from "@/data/landing/navigation";
 import { useInView } from "@/hooks/useInView";
 import { NavLink } from "../NavLink";
@@ -13,12 +14,12 @@ export function Footer() {
       ref={ref}
       className={`bg-black text-white px-6 py-12 reveal ${isInView ? "active" : ""}`}
     >
-      <div className="max-w-400 mx-auto flex flex-col md:flex-row justify-between items-center gap-8 border-b border-gray-800 pb-12 mb-8">
+      <div className="max-w-400 mx-auto flex flex-col md:flex-row justify-between items-center border-b border-gray-800 pb-4 mb-8">
         <Link
           className="text-2xl font-semibold tracking-wide uppercase"
-          href="#"
+          href="/"
         >
-          DIGITAL<span className="text-covet-green">COVET</span>
+          <LogoWhite className="h-10 w-auto" />
         </Link>
 
         <ul className="flex gap-8 text-sm text-gray-400">

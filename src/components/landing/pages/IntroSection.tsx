@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
 import { teamMembers } from "@/data/landing/team";
@@ -25,7 +26,7 @@ export function IntroSection() {
           </h2>
 
           <Link
-            href="#"
+            href="/contact-us"
             className="inline-block bg-black text-white px-8 py-4 text-sm font-semibold uppercase hover:bg-covet-green transition-colors mb-16"
           >
             Let's Get Started
@@ -41,7 +42,9 @@ export function IntroSection() {
                 className={`flex -space-x-4 stagger-container ${isInView ? "active" : ""}`}
               >
                 {teamMembers.map((member, index) => (
-                  <img
+                  <Image
+                    width={100}
+                    height={100}
                     key={index}
                     alt={member.alt}
                     className="w-12 h-12 rounded-full border-2 border-white object-cover stagger-item"
@@ -77,10 +80,12 @@ export function IntroSection() {
         <div
           className={`relative h-150 w-full reveal ${isInView ? "active" : ""}`}
         >
-          <img
+          <Image
+            width={512}
+            height={512}
             alt="Creative Workspace"
             className="w-full h-full object-cover filter grayscale hover:grayscale-0 transition-all duration-700"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_tOBzs3ns0uE_pUUIUiip3IIjQFB_ooPzejFei42aRifxd2Sr0AO_E-bAPe46kUlsABhByeZwDdUIUh6YOf--EcSKUTVISyvW7PfUF3I4i6tE8ROOZgcScX7nySXAlHWl5v9tH5UpsIvEz4SHVYSDBVJLbJgmnXnYMIFiPGotu6UVoN6AtY6v_5pfz4kTrDhQ4Z43KKjf63mMxX3cZsiF-LKGTYR3-eK3iR3XEc3vhETnFCuDFlSNd1LPg7iVNJMuu9YEQwFBCxXp"
+            src="/intro-section.webp"
           />
         </div>
       </div>

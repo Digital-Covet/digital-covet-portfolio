@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import LogoWhite from "@/assets/logo-white";
 import { buttonVariants } from "@/components/ui/button";
 import { primaryNavLinks } from "@/data/landing/navigation";
 import { useInView } from "@/hooks/useInView";
@@ -16,8 +17,8 @@ export function Navbar() {
       className={`relative z-10 w-full px-6 py-8 flex justify-between items-center max-w-400 mx-auto reveal ${isInView ? "active" : ""}`}
       style={{ transitionDelay: "0.2s" }}
     >
-      <Link className="text-2xl font-semibold tracking-wide uppercase" href="#">
-        DIGITAL<span className="text-covet-green">COVET</span>
+      <Link className="text-2xl font-semibold tracking-wide uppercase" href="/">
+        <LogoWhite className="h-8 w-auto" />
       </Link>
 
       <div className="flex gap-16 text-sm font-medium">
@@ -40,7 +41,7 @@ export function Navbar() {
           style={{ transitionDelay: "0.4s" }}
         >
           <Link
-            href="#"
+            href="https://digitalcovet.com/contact-us"
             className={cn(
               buttonVariants({ variant: "secondary" }),
               "bg-primary text-primary-foreground px-6 py-3 text-sm font-bold uppercase hover:bg-white hover:text-primary transition-colors",

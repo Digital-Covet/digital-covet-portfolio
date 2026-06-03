@@ -11,6 +11,13 @@ const nextConfig: NextConfig = {
         pathname: "/**",
         search: "",
       },
+      {
+        protocol: "https",
+        hostname: "digitalcovet.com",
+        port: "",
+        pathname: "/**",
+        search: "",
+      },
     ],
   },
   async headers() {
@@ -32,7 +39,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Security-Policy",
-            value: "img-src 'self' blob: data: https://lh3.googleusercontent.com;",
+            value: "img-src 'self' blob: data: https://lh3.googleusercontent.com https://digitalcovet.com;",
           },
         ],
       },

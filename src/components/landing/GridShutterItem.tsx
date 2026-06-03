@@ -25,7 +25,7 @@ export function GridShutterItem({ item }: GridShutterItemProps) {
     >
       <img
         alt={item.category}
-        className="w-full h-full object-cover filter grayscale"
+        className="w-full h-full object-cover filter grayscale hover:grayscale-0 transition-all duration-500"
         src={item.image}
       />
       <div className={`absolute top-0 left-0 ${paddingClass} z-20`}>

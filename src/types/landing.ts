@@ -25,7 +25,7 @@ export interface PortfolioItem {
   delay: number;
 }
 
-export interface Feature {
+export interface Services {
   number: string;
   title: string;
   description: string;

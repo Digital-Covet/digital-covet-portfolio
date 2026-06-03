@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useRef } from "react";
 import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { useInView } from "@/hooks/useInView";
 import { useParallax } from "@/hooks/useParallax";
+import { cn } from "@/lib/utils";
 
 export function CTASection() {
   const { ref, isInView } = useInView();
@@ -33,7 +33,7 @@ export function CTASection() {
         </div>
 
         <Link
-          href="#"
+          href="https://digitalcovet.com"
           className={cn(
             buttonVariants({ variant: "secondary" }),
             "bg-black text-white px-10 py-5 text-sm font-bold uppercase hover:bg-white hover:text-primary transition-colors whitespace-nowrap",

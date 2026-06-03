@@ -4,7 +4,7 @@ import {
   Footer,
   HeroSection,
   IntroSection,
-  ManifestoSection,
+  ServicesSection,
   SelectedWorksSection,
   StatsSection,
 } from "@/components/landing/pages";
@@ -24,7 +24,7 @@ export default async function Home() {
       <main className="bg-white text-black rounded-t-3xl -mt-10 relative z-20">
         <IntroSection />
         <StatsSection />
-        <ManifestoSection />
+        <ServicesSection />
         <SelectedWorksSection />
         <CTASection />
       </main>

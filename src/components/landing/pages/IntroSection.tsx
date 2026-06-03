@@ -84,7 +84,7 @@ export function IntroSection() {
             width={512}
             height={512}
             alt="Creative Workspace"
-            className="w-full h-full object-cover filter grayscale hover:grayscale-0 transition-all duration-700"
+            className="w-full h-full object-cover filter"
             src="/intro-section.webp"
           />
         </div>

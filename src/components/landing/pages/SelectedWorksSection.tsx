@@ -15,7 +15,7 @@ export function SelectedWorksSection() {
   return (
     <section
       id="work"
-      className="max-w-400 mx-auto px-6 py-24 relative bg-black text-[#e2e2e2]"
+      className="mx-auto px-6 py-24 relative bg-black text-[#e2e2e2]"
     >
       <div
         ref={starRef}

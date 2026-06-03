@@ -3,7 +3,7 @@ import type { PortfolioItem } from "@/types/landing";
 export const portfolioItems: PortfolioItem[] = [
   {
     id: "1",
-    title: "Visual Voice",
+    title: "Data Backed Solutions",
     category: "Digital Strategy",
     image: "/services/digital-strategy.webp",
     colSpan: "col-span-1 md:col-span-2",
@@ -12,7 +12,7 @@ export const portfolioItems: PortfolioItem[] = [
   },
   {
     id: "2",
-    title: "Digital Craft",
+    title: "User Experience",
     category: "UX/UI Design",
     image: "/services/ui-ux-strategy.webp",
     colSpan: "col-span-1",
@@ -21,7 +21,7 @@ export const portfolioItems: PortfolioItem[] = [
   },
   {
     id: "3",
-    title: "Entertainment Hub",
+    title: "Foundation",
     category: "Brand Identity",
     image: "/services/brand-guidelines.webp",
     colSpan: "col-span-1",
@@ -30,7 +30,7 @@ export const portfolioItems: PortfolioItem[] = [
   },
   {
     id: "4",
-    title: "Resonance",
+    title: "Process",
     category: "Creative Direction",
     image: "/services/creative-direction.webp",
     colSpan: "col-span-1 md:col-span-2",
@@ -39,7 +39,7 @@ export const portfolioItems: PortfolioItem[] = [
   },
   {
     id: "5",
-    title: "Global Presence",
+    title: "Connection",
     category: "Marketing",
     image: "/services/marketing.webp",
     colSpan: "col-span-1",

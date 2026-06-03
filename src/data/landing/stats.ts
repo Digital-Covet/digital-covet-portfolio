@@ -2,7 +2,7 @@ import type { Stat } from "@/types/landing";
 
 export const stats: Stat[] = [
   {
-    target: 11,
+    target: 9,
     label: ["Years of", "Experiences"],
     textColor: "text-covet-green",
     borderColor: "border-covet-green",
@@ -16,13 +16,13 @@ export const stats: Stat[] = [
     textColor: "text-white",
     borderColor: "border-white",
     colSpan: "col-span-12 md:col-span-5",
-    customClass: "text-[12rem] lg:text-[18rem] mix-blend-difference",
+    customClass: "text-[12rem] lg:text-[16rem] mix-blend-difference",
     delay: 0.2,
     marginTop: "md:mt-32",
   },
   {
     target: 11,
-    label: ["Industry", "Awards"],
+    label: ["Industry", "Served"],
     textColor: "text-white/20",
     borderColor: "border-white",
     colSpan: "col-span-12",

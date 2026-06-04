@@ -152,6 +152,26 @@
     -webkit-text-stroke: 1px var(--color-primary);
   }
 
+  /* Blueprint Grid Background */
+  .blueprint-grid {
+    background-color: var(--color-covet-dark);
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    background-size:
+      80px 80px,
+      80px 80px,
+      16px 16px,
+      16px 16px;
+    background-position:
+      -1px -1px,
+      -1px -1px,
+      -1px -1px,
+      -1px -1px;
+  }
+
   /* Reveal Animations */
   .reveal {
     opacity: 0;

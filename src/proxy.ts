@@ -93,7 +93,8 @@ function buildCsp(nonce: string, isDev: boolean): string {
     }`,
 
     // next/font + runtime styles
-    `style-src 'self' ${isDev ? "'unsafe-inline'" : `'nonce-${nonce}'`}`,
+    // nonce covers <style> tags; unsafe-inline required for style= attributes
+    `style-src 'self' 'unsafe-inline'${isDev ? "" : ` 'nonce-${nonce}'`}`,
 
     "img-src 'self' blob: data: https://lh3.googleusercontent.com",
 

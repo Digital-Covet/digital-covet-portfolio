@@ -27,8 +27,8 @@ export function ServicesSection() {
               THE <span className="text-covet-green">DIGITAL COVET</span> EDGE
             </h2>
             <p className="text-2xl md:text-3xl font-light leading-snug max-w-4xl text-gray-400">
-              More than an agency, we’re the creative engine behind
-              unforgettable brands and measurable growth.
+              More than an agency, we’re the growth engine behind unforgettable
+              brands and measurable growth.
             </p>
           </div>
           <div className="lg:col-span-4 flex justify-end">

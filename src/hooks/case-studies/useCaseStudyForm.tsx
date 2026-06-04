@@ -104,10 +104,6 @@ export function useCaseStudyForm({
     };
   }, [performAutosave]);
 
-  useEffect(() => {
-    dirtyTracker.markClean(form);
-  }, [form, dirtyTracker]);
-
   // ✅ FIX: Sync ref immediately in all state updates
   const updateBasics = useCallback(
     <K extends keyof CaseStudyForm["basics"]>(

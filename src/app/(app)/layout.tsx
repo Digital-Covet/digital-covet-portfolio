@@ -1,5 +1,5 @@
-import type React from "react";
 import { redirect } from "next/navigation";
+import type React from "react";
 import { AppSidebar } from "@/components/app-sidebar";
 import { DynamicBreadcrumb } from "@/components/dynamic-breadcrumb";
 import { Separator } from "@/components/ui/separator";
@@ -9,11 +9,29 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { UserDropdown } from "@/components/user-dropdown";
+import { prisma } from "@/db";
 import { getCurrentUser } from "@/lib/auth.server";
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const user = await getCurrentUser();
   if (!user) redirect("/auth/login");
-  if (!user.passwordChanged) redirect("/auth/setup-password");
+  if (!user.passwordChanged) {
+    const hasCredential = await prisma.account.findFirst({
+      where: { userId: user.id, providerId: "credential" },
+      select: { id: true },
+    });
+    if (hasCredential) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { passwordChanged: true },
+      });
+    } else {
+      redirect("/auth/setup-password");
+    }
+  }
   if (!user.twoFactorEnabled) redirect("/auth/setup-2fa");
   return (
     <SidebarProvider

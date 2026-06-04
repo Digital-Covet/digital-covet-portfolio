@@ -18,15 +18,12 @@ export function IntroSection() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-start">
         <div ref={ref} className={`reveal ${isInView ? "active" : ""}`}>
           <h2 className="text-5xl font-medium leading-tight mb-8">
-            DIGITAL COVET
-            <br />
-            helps brands find their
-            <br />
-            voice, shape story
+            Helping brands discover their voice, define their story, and drive
+            growth
           </h2>
 
           <Link
-            href="/contact-us"
+            href="https://digitalcovet.com/contact-us/?portfolio"
             className="inline-block bg-black text-white px-8 py-4 text-sm font-semibold uppercase hover:bg-covet-green transition-colors mb-16"
           >
             Let's Get Started

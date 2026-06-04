@@ -25,21 +25,21 @@ export function CTASection() {
       <div className="max-w-400 mx-auto flex flex-col md:flex-row items-center justify-between gap-8">
         <div>
           <span className="border border-white rounded-full px-4 py-1 text-sm font-medium mb-6 inline-block">
-            CTA
+            Lets Talk
           </span>
-          <h2 className="text-6xl md:text-8xl font-bold tracking-tighter">
-            Ready to dominate?
+          <h2 className="text-4xl md:text-6xl font-bold tracking-tighter">
+            Let's turn clicks into customers.
           </h2>
         </div>
 
         <Link
-          href="https://digitalcovet.com"
+          href="https://digitalcovet.com/contact-us"
           className={cn(
             buttonVariants({ variant: "secondary" }),
             "bg-black text-white px-10 py-5 text-sm font-bold uppercase hover:bg-white hover:text-primary transition-colors whitespace-nowrap",
           )}
         >
-          Visit Main Site
+          Contact Us
         </Link>
       </div>
     </section>

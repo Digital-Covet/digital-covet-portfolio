@@ -28,7 +28,7 @@ export function SelectedWorksSection() {
         ref={ref}
         className={`text-5xl font-medium mb-16 text-center text-white reveal ${isInView ? "active" : ""}`}
       >
-        Selected Works
+        Our Works
       </h2>
 
       <div className={`stagger-container ${isInView ? "active" : ""}`}>

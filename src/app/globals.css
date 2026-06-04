@@ -293,7 +293,7 @@
 
   .grid-shutter:hover img {
     transform: scale(1.1);
-    filter: grayscale(0) contrast(1.1);
+    filter: grayscale(0);
   }
 
   .grid-shutter .overlay-text {

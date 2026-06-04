@@ -15,19 +15,38 @@ const PUBLIC_ROUTES: (AppRoute | "/")[] = [
   ROUTES.TEST_INVITE,
 ];
 
+const PROTECTED_ROUTE_PREFIXES: readonly string[] = [
+  ROUTES.DASHBOARD,
+  ROUTES.SHARES,
+  "/case-studies",
+  "/clients",
+  "/taxonomies",
+  "/users",
+  "/account",
+];
+
 const PUBLIC_SHARE_TOKEN_PATTERN = /^\/shares\/[a-f0-9-]{36}$/;
 
 function isPublicRoute(pathname: string): boolean {
   return (
     PUBLIC_ROUTES.some((route) => {
       if (route === "/") return pathname === "/";
-      return pathname.startsWith(route);
+      return pathname === route || pathname.startsWith(`${route}/`);
     }) || PUBLIC_SHARE_TOKEN_PATTERN.test(pathname)
   );
 }
 
 function isShareRoute(pathname: string): boolean {
   return PUBLIC_SHARE_TOKEN_PATTERN.test(pathname);
+}
+
+function isProtectedRoute(pathname: string): boolean {
+  if (isShareRoute(pathname)) return false;
+
+  return PROTECTED_ROUTE_PREFIXES.some(
+    (prefix) =>
+      pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 }
 
 function shouldPassthrough(pathname: string): boolean {
@@ -219,7 +238,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     }
 
     case "UNAUTHENTICATED": {
-      if (isPublicRoute(pathname)) {
+      if (!isProtectedRoute(pathname)) {
         const response = NextResponse.next({
           request: {
             headers: requestHeaders,

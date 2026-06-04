@@ -32,7 +32,7 @@ export function createEmptyForm(): CaseStudyForm {
   return {
     basics: {
       title: "Untitled",
-      slug: "",
+      slug: "untitled",
       clientId: null,
       sectorId: null,
       industryId: null,

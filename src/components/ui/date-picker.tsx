@@ -46,6 +46,9 @@ export function DatePicker({
         <Calendar
           mode="single"
           selected={date}
+          captionLayout="dropdown"
+          startMonth={new Date(2000, 0)}
+          endMonth={new Date(2100, 11)}
           onSelect={(selected) => {
             onChange(selected ? format(selected, "yyyy-MM-dd") : null);
             setOpen(false);

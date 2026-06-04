@@ -111,11 +111,15 @@ function buildCsp(nonce: string, isDev: boolean): string {
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""
     }`,
 
-    // next/font + runtime styles
-    // nonce covers <style> tags; unsafe-inline required for style= attributes
-    `style-src 'self' 'unsafe-inline'${isDev ? "" : ` 'nonce-${nonce}'`}`,
+    // Style policy:
+    // CSP rule: when a nonce OR hash is present, browsers IGNORE 'unsafe-inline'.
+    // Next.js only nonces styles it emits; Radix UI / shadcn set inline style=""
+    // attributes (e.g. --sidebar-width, clip-path) that we cannot nonce.
+    // We keep nonce on script-src (the XSS-critical directive) and allow inline
+    // styles here.
+    `style-src 'self' 'unsafe-inline'`,
 
-    "img-src 'self' blob: data: https://lh3.googleusercontent.com",
+    "img-src 'self' blob: data: https://lh3.googleusercontent.com https://digitalcovet.com",
 
     "font-src 'self' data:",
 

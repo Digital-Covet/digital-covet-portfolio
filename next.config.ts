@@ -37,10 +37,6 @@ const nextConfig: NextConfig = {
             key: "X-Content-Type-Options",
             value: "nosniff",
           },
-          {
-            key: "Content-Security-Policy",
-            value: "img-src 'self' blob: data: https://lh3.googleusercontent.com https://digitalcovet.com;",
-          },
         ],
       },
       {

@@ -39,9 +39,9 @@ function hexToRgb(hex: string): [number, number, number] {
   const value =
     normalized.length === 3
       ? normalized
-        .split("")
-        .map((c) => c + c)
-        .join("")
+          .split("")
+          .map((c) => c + c)
+          .join("")
       : normalized;
 
   const int = Number.parseInt(value, 16);

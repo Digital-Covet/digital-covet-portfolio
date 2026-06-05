@@ -44,8 +44,7 @@ function isProtectedRoute(pathname: string): boolean {
   if (isShareRoute(pathname)) return false;
 
   return PROTECTED_ROUTE_PREFIXES.some(
-    (prefix) =>
-      pathname === prefix || pathname.startsWith(`${prefix}/`),
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
 }
 
@@ -108,7 +107,8 @@ function buildCsp(nonce: string, isDev: boolean): string {
     "default-src 'self'",
 
     // STRICT CSP
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${
+      isDev ? " 'unsafe-eval'" : ""
     }`,
 
     // Style policy:

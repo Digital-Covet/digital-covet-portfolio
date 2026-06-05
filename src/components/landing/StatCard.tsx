@@ -24,12 +24,13 @@ export function StatCard({ stat }: StatCardProps) {
       style={{ transitionDelay: `${stat.delay}s` }}
     >
       <div
-        className={`flex flex-col ${stat.colSpan.includes("md:col-span-5")
+        className={`flex flex-col ${
+          stat.colSpan.includes("md:col-span-5")
             ? "items-end md:items-start"
             : isCenter
               ? "items-center"
               : ""
-          }`}
+        }`}
       >
         <span
           className={`${stat.customClass} ${stat.textColor} font-bold leading-[0.7] tracking-tighter`}
@@ -37,12 +38,13 @@ export function StatCard({ stat }: StatCardProps) {
           {count}+
         </span>
         <div
-          className={`mt-4 ${stat.colSpan.includes("md:col-span-5")
+          className={`mt-4 ${
+            stat.colSpan.includes("md:col-span-5")
               ? "pr-4 md:pr-0 md:pl-4 text-right md:text-left border-r-4 md:border-r-0 md:border-l-4"
               : isCenter
                 ? "text-center"
                 : "pl-4 border-l-4"
-            } ${stat.borderColor}`}
+          } ${stat.borderColor}`}
         >
           {stat.label.map((line, index) => (
             <span

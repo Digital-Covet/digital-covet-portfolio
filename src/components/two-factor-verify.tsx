@@ -102,9 +102,7 @@ export default function TwoFactorVerify({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-3">
           <Label className="text-center">
-            {mode === "totp"
-              ? "Authenticator code"
-              : "Backup code"}
+            {mode === "totp" ? "Authenticator code" : "Backup code"}
           </Label>
 
           {mode === "totp" ? (

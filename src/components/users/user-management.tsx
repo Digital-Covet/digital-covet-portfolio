@@ -109,7 +109,7 @@ export function UserManagement({
       if (error) {
         setDeleteError(
           error.message ||
-          "Failed to send verification code. Please try again.",
+            "Failed to send verification code. Please try again.",
         );
         setSendingOtp(false);
         return;

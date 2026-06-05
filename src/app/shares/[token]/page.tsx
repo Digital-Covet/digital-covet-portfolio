@@ -22,8 +22,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import type {
   SerializedMetric,
   SerializedStudy,
@@ -54,7 +54,7 @@ export default function SharePage({
   useEffect(() => {
     getShareInfo(token)
       .then(setInfo)
-      .catch(() => { });
+      .catch(() => {});
   }, [token]);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function SharePage({
     if (info && info.exists && info.unlocked && info.status === "ok") {
       getShareContent(token)
         .then(setContent)
-        .catch(() => { });
+        .catch(() => {});
     }
   }, [info, token]);
 
@@ -138,9 +138,8 @@ export default function SharePage({
           <form onSubmit={handleUnlock} className="mt-6 space-y-3">
             <div className="space-y-2">
               <Label htmlFor="pw">Password</Label>
-              <Input
+              <PasswordInput
                 id="pw"
-                type="password"
                 autoFocus
                 required
                 value={password}
@@ -431,7 +430,7 @@ function CaseStudyDetail({
                             e.stopPropagation();
                             setGalleryIndex(
                               (galleryIndex - 1 + study.galleryUrls.length) %
-                              study.galleryUrls.length,
+                                study.galleryUrls.length,
                             );
                           }}
                           className="absolute left-2 flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
@@ -549,6 +548,6 @@ function toEmbed(url: string): string {
     if (u.hostname.includes("vimeo.com")) {
       return `https://player.vimeo.com/video${u.pathname}`;
     }
-  } catch { }
+  } catch {}
   return url;
 }

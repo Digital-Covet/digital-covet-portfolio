@@ -6,8 +6,8 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { authClient } from "@/lib/auth-client";
 import { ROUTES } from "@/lib/constants";
 
@@ -79,9 +79,8 @@ function ResetPasswordForm() {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="password">New Password</Label>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           required
           autoComplete="new-password"
           value={password}
@@ -94,9 +93,8 @@ function ResetPasswordForm() {
       </div>
       <div className="space-y-2">
         <Label htmlFor="confirmPassword">Confirm New Password</Label>
-        <Input
+        <PasswordInput
           id="confirmPassword"
-          type="password"
           required
           autoComplete="new-password"
           value={confirmPassword}

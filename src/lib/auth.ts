@@ -7,7 +7,10 @@ import { renderDeleteVerificationEmail } from "@/services/email-templates";
 import { ac, adminRole, employeeRole, superadminRole } from "./permission";
 
 export const auth = betterAuth({
-  trustedOrigins: ["https://portfolio.digitalcovet.com", "http://localhost:3000"],
+  trustedOrigins: [
+    "https://portfolio.digitalcovet.com",
+    "http://localhost:3000",
+  ],
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),

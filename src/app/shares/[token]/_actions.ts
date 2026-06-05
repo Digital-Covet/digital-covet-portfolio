@@ -18,12 +18,12 @@ export type ShareStatus = "ok" | "expired" | "revoked" | "limit";
 export type ShareInfo =
   | { exists: false }
   | {
-    exists: true;
-    name: string;
-    status: ShareStatus;
-    unlocked: boolean;
-    requiresPassword: boolean;
-  };
+      exists: true;
+      name: string;
+      status: ShareStatus;
+      unlocked: boolean;
+      requiresPassword: boolean;
+    };
 
 export type SerializedStudy = {
   id: string;
@@ -293,11 +293,11 @@ export async function getShareContent(token: string): Promise<ShareContent> {
       attachmentUrls: transformedUrls,
       client: study.client
         ? {
-          ...study.client,
-          logoUrl: study.client.logoUrl
-            ? toPublicUrl(study.client.logoUrl)
-            : null,
-        }
+            ...study.client,
+            logoUrl: study.client.logoUrl
+              ? toPublicUrl(study.client.logoUrl)
+              : null,
+          }
         : null,
     };
   }

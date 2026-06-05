@@ -14,8 +14,9 @@ export function NavLink({
   return (
     <Link
       href={href}
-      className={`nav-link transition-colors ${isActive ? "text-covet-green" : "hover:text-covet-green"
-        } ${className}`}
+      className={`nav-link transition-colors ${
+        isActive ? "text-covet-green" : "hover:text-covet-green"
+      } ${className}`}
     >
       {label}
     </Link>

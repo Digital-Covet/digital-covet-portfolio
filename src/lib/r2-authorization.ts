@@ -3,7 +3,8 @@ import type { AuthUser } from "@/types/auth.types";
 const R2_KEY_PATTERN =
   /^(?<bucket>client-logos|case-study-media|case-study-attachments)\/dept=(?<dept>[^/]+)\/user=(?<userId>[^/]+)(?:\/case-study=(?<caseStudyId>[^/]+))?\/year=(?<year>\d{4})\/month=(?<month>\d{2})\/(?<objectId>[A-Za-z0-9-]{36})_(?<filename>[^/]+)$/;
 
-const AVATAR_KEY_PATTERN = /^avatars\/user=(?<userId>[^/]+)\/(?<objectId>[A-Za-z0-9-]{36})$/;
+const AVATAR_KEY_PATTERN =
+  /^avatars\/user=(?<userId>[^/]+)\/(?<objectId>[A-Za-z0-9-]{36})$/;
 
 export type R2KeyMetadata = {
   bucket: string;

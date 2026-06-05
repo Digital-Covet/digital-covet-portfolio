@@ -79,10 +79,11 @@ export function CaseStudiesListPageClient({
               key={filter}
               type="button"
               onClick={() => vm.setStatusFilter(filter)}
-              className={`rounded px-3 py-1 text-xs font-medium capitalize transition-colors ${vm.statusFilter === filter
+              className={`rounded px-3 py-1 text-xs font-medium capitalize transition-colors ${
+                vm.statusFilter === filter
                   ? "bg-primary text-primary-foreground"
                   : "text-muted-foreground hover:bg-muted"
-                }`}
+              }`}
             >
               {filter}
             </button>

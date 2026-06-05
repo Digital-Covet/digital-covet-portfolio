@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 interface LoginFormProps {
   onSubmit: (values: { email: string; password: string }) => Promise<void>;
@@ -44,9 +45,8 @@ export function LoginForm({ onSubmit, submitting }: LoginFormProps) {
             Forgot password?
           </Link>
         </div>
-        <Input
+        <PasswordInput
           id="password"
-          type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required

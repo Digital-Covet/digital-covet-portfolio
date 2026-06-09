@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import type { AuthUser } from "@/types/auth.types";
+import { AccountEmailDisplay } from "./account-email-display";
 import { AccountNameForm } from "./account-name-form";
 import { AvatarUpload } from "./avatar-upload";
 import { TwoFactorReset } from "./two-factor-reset";
@@ -38,6 +39,10 @@ export function AccountSettingsShell({ user }: AccountSettingsShellProps) {
           <Separator />
 
           <AccountNameForm currentName={user.name} />
+
+          <Separator />
+
+          <AccountEmailDisplay email={user.email} />
         </section>
 
         <Separator />

@@ -294,7 +294,7 @@ function CaseStudyDetail({
         <img
           src={study.heroImageUrl}
           alt={study.title}
-          className="aspect-video w-full object-cover md:aspect-[21/9]"
+          className="w-full object-contain md:aspect-[21/9]"
         />
       )}
 

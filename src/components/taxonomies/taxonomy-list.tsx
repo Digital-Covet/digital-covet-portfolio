@@ -33,6 +33,7 @@ interface TaxonomyListProps {
   type: T;
   items: TaxonomyItem[];
   onSelect?: (id: string) => void;
+  parentId?: string | null;
 }
 
 export function TaxonomyList({
@@ -40,6 +41,7 @@ export function TaxonomyList({
   type,
   items,
   onSelect,
+  parentId,
 }: TaxonomyListProps) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -54,6 +56,7 @@ export function TaxonomyList({
       await createTaxonomy({
         type,
         name: name.trim(),
+        parentId: parentId ?? undefined,
       });
       setName("");
       toast.success(`${name.trim()} added`);

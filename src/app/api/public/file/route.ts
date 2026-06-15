@@ -5,7 +5,11 @@ import { parseR2Key } from "@/lib/r2-authorization";
 
 export const maxDuration = 300;
 
-const PUBLIC_BUCKETS = ["case-study-media", "case-study-attachments"] as const;
+const PUBLIC_BUCKETS = [
+  "case-study-media",
+  "case-study-attachments",
+  "avatars",
+] as const;
 
 export async function GET(request: NextRequest) {
   const key = request.nextUrl.searchParams.get("key");

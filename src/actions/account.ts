@@ -47,7 +47,7 @@ export async function createAvatarUploadUrl(input: {
 
     return ok({
       presignedUrl,
-      proxyUrl: `/api/file?key=${encodeURIComponent(key)}`,
+      proxyUrl: `/api/public/file?key=${encodeURIComponent(key)}`,
     });
   });
 }

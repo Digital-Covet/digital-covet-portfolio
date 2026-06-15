@@ -5,6 +5,7 @@ import {
   LinkIcon,
   PlusIcon,
   ProhibitIcon,
+  TrashIcon,
 } from "@phosphor-icons/react";
 import { format } from "date-fns";
 import Link from "next/link";
@@ -16,6 +17,7 @@ import type {
   SerializedShareView,
 } from "@/app/(app)/shares/actions";
 import {
+  deleteShare,
   getShareViews,
   revokeShare,
   unrevokeShare,
@@ -50,6 +52,7 @@ export function SharesList({ initialShares }: SharesListProps) {
   const [viewLogs, setViewLogs] = useState<SerializedShareView[]>([]);
   const [viewLogsLoading, setViewLogsLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   function handleViewLog(id: string, name: string) {
     setViewing({ id, name });
     setViewLogs([]);
@@ -99,6 +102,28 @@ export function SharesList({ initialShares }: SharesListProps) {
       }
     });
   }
+  function handleDelete(id: string) {
+    setDeletingId(id);
+  }
+  function confirmDelete() {
+    if (!deletingId) return;
+    const id = deletingId;
+    setDeletingId(null);
+    setActionId(id);
+    startTransition(async () => {
+      try {
+        await deleteShare(id);
+        toast.success("Share link deleted");
+        router.refresh();
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Failed to delete share",
+        );
+      } finally {
+        setActionId(null);
+      }
+    });
+  }
   return (
     <div className="md:p-10">
       {}
@@ -130,6 +155,7 @@ export function SharesList({ initialShares }: SharesListProps) {
             onViewLog={() => handleViewLog(share.id, share.name)}
             onRevoke={() => handleRevoke(share.id)}
             onUnrevoke={() => handleUnrevoke(share.id)}
+            onDelete={() => handleDelete(share.id)}
           />
         ))}
         {initialShares.length === 0 && (
@@ -188,6 +214,37 @@ export function SharesList({ initialShares }: SharesListProps) {
           )}
         </DialogContent>
       </Dialog>
+      <Dialog
+        open={deletingId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeletingId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Share</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Are you sure you want to delete this share link? This action cannot be undone.
+          </p>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDeletingId(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={confirmDelete}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -198,6 +255,7 @@ interface ShareCardProps {
   onViewLog: () => void;
   onRevoke: () => void;
   onUnrevoke: () => void;
+  onDelete: () => void;
 }
 function ShareCard({
   share,
@@ -206,6 +264,7 @@ function ShareCard({
   onViewLog,
   onRevoke,
   onUnrevoke,
+  onDelete,
 }: ShareCardProps) {
   const badge = getShareStatusBadge({
     revoked: share.revoked,
@@ -271,6 +330,15 @@ function ShareCard({
         >
           <EyeIcon size={16} className="mr-1.5" />
           View Log
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onDelete}
+          disabled={isActioning || isPendingGlobal}
+        >
+          <TrashIcon size={16} className="mr-1.5" />
+          Delete
         </Button>
         {share.revoked ? (
           <Button

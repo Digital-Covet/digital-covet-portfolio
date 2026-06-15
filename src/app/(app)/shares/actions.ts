@@ -140,6 +140,22 @@ export async function unrevokeShare(id: string) {
   revalidatePath("/dashboard");
   return { success: true };
 }
+export async function deleteShare(id: string) {
+  const user = await requireRole("employee");
+  const { id: validatedId } = revokeShareSchema.parse({ id });
+  const rbacFilter = await buildCreatedByFilter(user, getDeptUserIds);
+  const result = await prisma.shareLink.deleteMany({
+    where: { id: validatedId, ...rbacFilter },
+  });
+  if (result.count === 0) {
+    throw new Error(
+      "Share not found or you do not have permission to delete it",
+    );
+  }
+  revalidatePath("/shares");
+  revalidatePath("/dashboard");
+  return { success: true };
+}
 export async function getShareViews(shareLinkId: string) {
   const user = await requireRole("employee");
   const { shareLinkId: validatedId } = getShareViewsSchema.parse({

@@ -1,8 +1,18 @@
-import { emailOTPClient, twoFactorClient } from "better-auth/client/plugins";
+import {
+  emailOTPClient,
+  genericOAuthClient,
+  jwtClient,
+  twoFactorClient,
+} from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 
 export const authClient = createAuthClient({
   baseURL:
     typeof window === "undefined" ? process.env.BETTER_AUTH_URL : undefined,
-  plugins: [twoFactorClient(), emailOTPClient()],
+  plugins: [
+    twoFactorClient(),
+    emailOTPClient(),
+    genericOAuthClient(),
+    jwtClient(),
+  ],
 });

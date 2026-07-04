@@ -3,6 +3,14 @@ import { z } from "zod";
 import type { AuthUser, UserRole } from "@/types/auth.types";
 import { auth } from "./auth";
 
+/**
+ * The `id` field on AuthUser (and thus `User.id` in the DB) is the `sub`
+ * claim extracted from the central IdP's ID Token via the getUserInfo
+ * callback in auth.ts. All local ACL/permission tables (Session.userId,
+ * Account.userId, CaseStudy.createdBy, ShareLink.createdBy, etc.)
+ * resolve identity against this central `sub` claim.
+ */
+
 const UserRoleSchema = z
   .enum(["employee", "admin", "superadmin"])
   .catch("employee");

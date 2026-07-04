@@ -36,12 +36,12 @@ export const metadata: Metadata = {
   title: "Digital Covet Portfolio",
   description:
     "Your professional digital portfolio showcasing projects and skills",
-  metadataBase: new URL("https://portfolio.digitalcovet.com"),
+  metadataBase: new URL("https://iam.digitalcovet.com"),
   openGraph: {
     title: "Digital Covet Portfolio",
     description:
       "Your professional digital portfolio showcasing projects and skills",
-    url: "https://portfolio.digitalcovet.com",
+    url: "https://iam.digitalcovet.com",
     siteName: "Digital Covet Portfolio",
     locale: "en_US",
     type: "website",

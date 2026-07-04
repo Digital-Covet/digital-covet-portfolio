@@ -80,8 +80,9 @@ function classifyRequest(
   pending2FA: boolean,
   pathname: string,
 ): AuthState {
+  if (pending2FA) return "PENDING_2FA_VERIFY";
+
   if (!session?.user) {
-    if (pending2FA) return "PENDING_2FA_VERIFY";
     return "UNAUTHENTICATED";
   }
 
@@ -216,7 +217,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     session = null;
   }
 
-  const pending2FA = !session?.user && hasPending2FACookie(request);
+  const pending2FA = hasPending2FACookie(request);
 
   const state = classifyRequest(session, pending2FA, pathname);
 

@@ -160,7 +160,7 @@ export const auth = betterAuth({
               id: userId,
               email: data.email as string,
               name: data.name as string,
-              image: (data.picture as string | undefined) ?? null,
+              image: (data.picture as string | undefined) ?? undefined,
               emailVerified: true,
             };
           },

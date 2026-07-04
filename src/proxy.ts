@@ -124,7 +124,7 @@ function buildCsp(nonce: string, isDev: boolean): string {
     "font-src 'self' data:",
 
     // R2 presigned PUT requires wildcard host; R2 account id is variable.
-    "connect-src 'self' https://va.vercel-scripts.com https://*.r2.cloudflarestorage.com",
+    "connect-src 'self' https://va.vercel-scripts.com https://*.r2.cloudflarestorage.com https://iam.digitalcovet.com",
 
     "frame-src 'self' https://www.youtube.com https://player.vimeo.com",
 

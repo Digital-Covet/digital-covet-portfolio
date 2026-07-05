@@ -22,23 +22,7 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
   emailAndPassword: {
-    enabled: true,
-    requireEmailVerification: true,
-    sendResetPassword: async ({ user, url }, _request) => {
-      try {
-        await sendEmail({
-          to: user.email,
-          subject: "Reset your password",
-          text: `Click the link to reset your password: ${url}`,
-        });
-      } catch (error) {
-        console.error(
-          "[Auth Hook] Failed to send reset password email:",
-          error instanceof Error ? error.message : error,
-        );
-        throw new Error("Failed to send reset password email.");
-      }
-    },
+    enabled: false,
   },
   emailVerification: {
     sendOnSignUp: true,

@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-import { LoginForm } from "@/components/login-form";
 import { authClient } from "@/lib/auth-client";
 import { ROUTES } from "@/lib/constants";
 
@@ -11,40 +10,23 @@ export default function LoginPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async ({
-    email,
-    password,
-  }: {
-    email: string;
-    password: string;
-  }) => {
+  const handleSSOLogin = async () => {
     setSubmitting(true);
 
     try {
-      const response = await authClient.signIn.email({ email, password });
+      const response = await authClient.signIn.oauth2({
+        providerId: "portfolio",
+        callbackURL: ROUTES.DASHBOARD,
+      });
 
       if (response.error) {
-        toast.error(response.error.message ?? "Sign-in failed.");
-        return;
+        toast.error(response.error.message ?? "SSO sign-in failed.");
+        setSubmitting(false);
       }
-
-      const data = response.data as {
-        twoFactorRedirect?: boolean;
-      } | null;
-
-      // ─── CHANGE M2: Destination routes use ROUTES constants, not raw strings
-      if (data?.twoFactorRedirect === true) {
-        router.push(ROUTES.VERIFY_2FA);
-        return;
-      }
-
-      toast.success("Signed in successfully!");
-      router.push(ROUTES.DASHBOARD);
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "An unexpected error occurred.";
       toast.error(message);
-    } finally {
       setSubmitting(false);
     }
   };
@@ -55,10 +37,46 @@ export default function LoginPage() {
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold">Sign in</h1>
           <p className="text-sm text-muted-foreground">
-            Enter your credentials to access your account.
+            Sign in with your Digital Covet account to continue.
           </p>
         </div>
-        <LoginForm onSubmit={handleSubmit} submitting={submitting} />
+        <button
+          type="button"
+          onClick={handleSSOLogin}
+          disabled={submitting}
+          className="flex w-full items-center justify-center gap-2 rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {submitting ? (
+            <>
+              <svg
+                className="h-4 w-4 animate-spin"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              Redirecting to IAM...
+            </>
+          ) : (
+            "Sign in with Digital Covet"
+          )}
+        </button>
+        <p className="text-center text-xs text-muted-foreground">
+          You will be redirected to iam.digitalcovet.com to authenticate.
+        </p>
       </div>
     </div>
   );

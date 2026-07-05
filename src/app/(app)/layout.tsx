@@ -18,21 +18,29 @@ export default async function AppLayout({
 }) {
   const user = await getCurrentUser();
   if (!user) redirect("/auth/login");
-  if (!user.passwordChanged) {
-    const hasCredential = await prisma.account.findFirst({
-      where: { userId: user.id, providerId: "credential" },
-      select: { id: true },
-    });
-    if (hasCredential) {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { passwordChanged: true },
+
+  const hasOAuthAccount = await prisma.account.findFirst({
+    where: { userId: user.id, providerId: { not: "credential" } },
+    select: { id: true },
+  });
+
+  if (!hasOAuthAccount) {
+    if (!user.passwordChanged) {
+      const hasCredential = await prisma.account.findFirst({
+        where: { userId: user.id, providerId: "credential" },
+        select: { id: true },
       });
-    } else {
-      redirect("/auth/setup-password");
+      if (hasCredential) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { passwordChanged: true },
+        });
+      } else {
+        redirect("/auth/setup-password");
+      }
     }
+    if (!user.twoFactorEnabled) redirect("/auth/setup-2fa");
   }
-  if (!user.twoFactorEnabled) redirect("/auth/setup-2fa");
   return (
     <SidebarProvider
       style={

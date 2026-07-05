@@ -117,15 +117,17 @@ export const auth = betterAuth({
       config: [
         {
           providerId: "portfolio",
-          discoveryUrl:
-            "https://iam.digitalcovet.com/.well-known/openid-configuration",
+          discoveryUrl: `${process.env.IAM_URL}/.well-known/openid-configuration`,
           clientId: "portfolio",
           clientSecret: process.env.OAUTH_CLIENT_SECRET ?? "",
           scopes: ["openid", "profile", "email"],
           getUserInfo: async (tokens) => {
-            const resp = await fetch("https://iam.digitalcovet.com/userinfo", {
-              headers: { Authorization: `Bearer ${tokens.accessToken}` },
-            });
+            const resp = await fetch(
+              `${process.env.IAM_URL}/api/auth/oauth2/userinfo`,
+              {
+                headers: { Authorization: `Bearer ${tokens.accessToken}` },
+              },
+            );
             const data = await resp.json();
 
             const idToken = tokens.raw?.id_token as string | undefined;

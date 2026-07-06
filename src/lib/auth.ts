@@ -7,10 +7,15 @@ import {
   jwt,
   twoFactor,
 } from "better-auth/plugins";
+import { createRemoteJWKSet, jwtVerify } from "jose";
 import { prisma } from "@/db";
 import { sendEmail } from "@/services/email";
 import { renderDeleteVerificationEmail } from "@/services/email-templates";
 import { ac, adminRole, employeeRole, superadminRole } from "./permission";
+
+const iamJwks = createRemoteJWKSet(
+  new URL(`${process.env.IAM_URL}/api/auth/jwks`),
+);
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
@@ -125,6 +130,26 @@ export const auth = betterAuth({
           scopes: ["openid", "profile", "email"],
           pkce: true,
           getUserInfo: async (tokens) => {
+            const idToken = tokens.raw?.id_token as string | undefined;
+
+            let userId: string;
+            let claimedEmail: string | undefined;
+            let claimedName: string | undefined;
+            let claimedPicture: string | undefined;
+
+            if (idToken) {
+              const { payload } = await jwtVerify(idToken, iamJwks, {
+                issuer: process.env.IAM_URL,
+                audience: "portfolio",
+              });
+              userId = (payload.sub as string) ?? (payload.userId as string);
+              claimedEmail = payload.email as string | undefined;
+              claimedName = payload.name as string | undefined;
+              claimedPicture = payload.picture as string | undefined;
+            } else {
+              userId = "";
+            }
+
             const resp = await fetch(
               `${process.env.IAM_URL}/api/auth/oauth2/userinfo`,
               {
@@ -133,23 +158,16 @@ export const auth = betterAuth({
             );
             const data = await resp.json();
 
-            const idToken = tokens.raw?.id_token as string | undefined;
-            let userId: string;
-
-            if (idToken) {
-              const payload = JSON.parse(
-                Buffer.from(idToken.split(".")[1], "base64url").toString(),
-              );
-              userId = payload.sub ?? payload.userId;
-            } else {
+            if (!userId) {
               userId = data.sub ?? data.userId;
             }
 
             return {
               id: userId,
-              email: data.email as string,
-              name: data.name as string,
-              image: (data.picture as string | undefined) ?? undefined,
+              email: claimedEmail ?? (data.email as string),
+              name: claimedName ?? (data.name as string),
+              image:
+                claimedPicture ?? (data.picture as string | undefined) ?? undefined,
               emailVerified: true,
             };
           },

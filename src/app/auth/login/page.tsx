@@ -1,57 +1,43 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { APP_DOMAIN, ROUTES } from "@/lib/constants";
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
+  const inFlight = useRef(false);
+
+  const redirectToIAM = async () => {
+    if (inFlight.current) return;
+    inFlight.current = true;
+    try {
+      const response = await authClient.signIn.oauth2({
+        providerId: "portfolio",
+        callbackURL: `${APP_DOMAIN}${ROUTES.DASHBOARD}`,
+      });
+
+      if (response.error) {
+        setError(response.error.message ?? "SSO sign-in failed.");
+        toast.error(response.error.message ?? "SSO sign-in failed.");
+      }
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "An unexpected error occurred.";
+      setError(message);
+      toast.error(message);
+    } finally {
+      inFlight.current = false;
+    }
+  };
 
   useEffect(() => {
-    const redirectToIAM = async () => {
-      try {
-        const response = await authClient.signIn.oauth2({
-          providerId: "portfolio",
-          callbackURL: `${APP_DOMAIN}${ROUTES.DASHBOARD}`,
-        });
-
-        if (response.error) {
-          setError(response.error.message ?? "SSO sign-in failed.");
-          toast.error(response.error.message ?? "SSO sign-in failed.");
-        }
-      } catch (err: unknown) {
-        const message =
-          err instanceof Error ? err.message : "An unexpected error occurred.";
-        setError(message);
-        toast.error(message);
-      }
-    };
-
     redirectToIAM();
   }, []);
 
   const handleRetry = () => {
     setError(null);
-    const redirectToIAM = async () => {
-      try {
-        const response = await authClient.signIn.oauth2({
-          providerId: "portfolio",
-          callbackURL: `${APP_DOMAIN}${ROUTES.DASHBOARD}`,
-        });
-
-        if (response.error) {
-          setError(response.error.message ?? "SSO sign-in failed.");
-          toast.error(response.error.message ?? "SSO sign-in failed.");
-        }
-      } catch (err: unknown) {
-        const message =
-          err instanceof Error ? err.message : "An unexpected error occurred.";
-        setError(message);
-        toast.error(message);
-      }
-    };
-
     redirectToIAM();
   };
 

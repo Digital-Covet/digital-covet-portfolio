@@ -1,5 +1,5 @@
 export const APP_DOMAIN =
-  process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  process.env.NEXT_PUBLIC_URL ?? "http://localhost:3000";
 export const WORK_EMAIL_DOMAIN = "@digitalcovet.com";
 export const SUPPORT_EMAIL = "support@digitalcovet.com";
 export const COMPANY_NAME = "Digital Covet";

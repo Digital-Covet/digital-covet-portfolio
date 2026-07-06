@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
-import { ROUTES } from "@/lib/constants";
+import { APP_DOMAIN, ROUTES } from "@/lib/constants";
 
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
@@ -13,7 +13,7 @@ export default function LoginPage() {
       try {
         const response = await authClient.signIn.oauth2({
           providerId: "portfolio",
-          callbackURL: ROUTES.DASHBOARD,
+          callbackURL: `${APP_DOMAIN}${ROUTES.DASHBOARD}`,
         });
 
         if (response.error) {
@@ -37,7 +37,7 @@ export default function LoginPage() {
       try {
         const response = await authClient.signIn.oauth2({
           providerId: "portfolio",
-          callbackURL: ROUTES.DASHBOARD,
+          callbackURL: `${APP_DOMAIN}${ROUTES.DASHBOARD}`,
         });
 
         if (response.error) {

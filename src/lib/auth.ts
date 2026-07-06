@@ -13,6 +13,7 @@ import { renderDeleteVerificationEmail } from "@/services/email-templates";
 import { ac, adminRole, employeeRole, superadminRole } from "./permission";
 
 export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL,
   trustedOrigins: [
     "https://iam.digitalcovet.com",
     "https://portfolio.digitalcovet.com",
@@ -121,6 +122,7 @@ export const auth = betterAuth({
           clientId: "portfolio",
           clientSecret: process.env.OAUTH_CLIENT_SECRET ?? "",
           scopes: ["openid", "profile", "email"],
+          pkce: true,
           getUserInfo: async (tokens) => {
             const resp = await fetch(
               `${process.env.IAM_URL}/api/auth/oauth2/userinfo`,

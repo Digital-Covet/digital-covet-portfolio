@@ -25,6 +25,12 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: false,
   },
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: true,
+      domain: "digitalcovet.com",
+    },
+  },
   emailVerification: {
     sendOnSignUp: true,
     sendOnSignIn: true,

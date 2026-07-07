@@ -3,15 +3,11 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import {
   admin as adminPlugin,
-  emailOTP,
   genericOAuth,
-  jwt,
   twoFactor,
 } from "better-auth/plugins";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { prisma } from "@/db";
-import { sendEmail } from "@/services/email";
-import { renderDeleteVerificationEmail } from "@/services/email-templates";
 import { ac, adminRole, employeeRole, superadminRole } from "./permission";
 
 const iamJwks = createRemoteJWKSet(
@@ -28,28 +24,11 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-  emailAndPassword: {
-    enabled: false,
-  },
-  advanced: {},
-  emailVerification: {
-    sendOnSignUp: true,
-    sendOnSignIn: true,
-    sendVerificationEmail: async ({ user, url }, _request) => {
-      try {
-        await sendEmail({
-          to: user.email,
-          subject: "Verify your email address",
-          text: `Click the link to verify your email: ${url}`,
-        });
-      } catch (error) {
-        console.error(
-          "[Auth Hook] Failed to send verification email:",
-          error instanceof Error ? error.message : error,
-        );
-        throw new Error("Failed to send verification email.");
-      }
-    },
+  advanced: {
+    useSecureCookies: process.env.NODE_ENV === "production",
+    cookiePrefix: process.env.NODE_ENV === "production"
+      ? "__Secure-better-auth"
+      : "better-auth",
   },
   user: {
     additionalFields: {
@@ -58,28 +37,9 @@ export const auth = betterAuth({
         required: false,
         defaultValue: null,
       },
-      passwordChanged: {
-        type: "boolean",
-        required: false,
-        defaultValue: false,
-      },
     },
   },
   plugins: [
-    jwt({
-      jwks: {
-        keyPairConfig: {
-          alg: "RS256",
-        },
-        rotationInterval: 60 * 60 * 24 * 30, // 30 days
-        gracePeriod: 60 * 60 * 24 * 30, // 30 days
-      },
-      jwt: {
-        issuer: process.env.BETTER_AUTH_URL,
-        audience: process.env.BETTER_AUTH_URL,
-        expirationTime: "15m",
-      },
-    }),
     twoFactor({
       issuer: "Digital Covet",
     }),
@@ -90,35 +50,6 @@ export const auth = betterAuth({
         superadmin: superadminRole,
         admin: adminRole,
         employee: employeeRole,
-      },
-    }),
-    emailOTP({
-      async sendVerificationOTP({ email, otp, type }) {
-        const username = email.split("@")[0];
-        const { html, text } = renderDeleteVerificationEmail({
-          username,
-          otp,
-        });
-        const subject =
-          type === "sign-in"
-            ? "Your verification code"
-            : type === "email-verification"
-              ? "Verify your email"
-              : "Reset your password";
-        try {
-          await sendEmail({
-            to: email,
-            subject,
-            text,
-            html,
-          });
-        } catch (error) {
-          console.error(
-            "[Auth Hook] Failed to send OTP email:",
-            error instanceof Error ? error.message : error,
-          );
-          throw new Error("Failed to send verification code.");
-        }
       },
     }),
     genericOAuth({
@@ -142,6 +73,8 @@ export const auth = betterAuth({
               const { payload } = await jwtVerify(idToken, iamJwks, {
                 issuer: `${process.env.IAM_URL}/api/auth`,
                 audience: "portfolio",
+                algorithms: ["RS256"],
+                clockTolerance: 60,
               });
               userId = (payload.sub as string) ?? (payload.userId as string);
               claimedEmail = payload.email as string | undefined;

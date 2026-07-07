@@ -3,15 +3,13 @@ import { NextResponse } from "next/server";
 
 import { auth } from "@/lib/auth";
 import { type AppRoute, ROUTES } from "@/lib/constants";
+import { logger } from "@/lib/logger";
 
 const PUBLIC_ROUTES: (AppRoute | "/")[] = [
   "/",
   ROUTES.LOGIN,
   ROUTES.FORGOT_PASSWORD,
   ROUTES.RESET_PASSWORD,
-  ROUTES.SETUP_PASSWORD,
-  ROUTES.VERIFY_2FA,
-  ROUTES.SETUP_2FA,
   ROUTES.TEST_INVITE,
 ];
 
@@ -57,10 +55,7 @@ function shouldPassthrough(pathname: string): boolean {
 }
 
 type AuthState =
-  | "PENDING_2FA_VERIFY"
   | "UNAUTHENTICATED"
-  | "NEEDS_PASSWORD_SETUP"
-  | "NEEDS_2FA_SETUP"
   | "AUTHENTICATED_ON_PUBLIC"
   | "AUTHENTICATED";
 
@@ -68,32 +63,18 @@ type SessionUser = NonNullable<
   Awaited<ReturnType<typeof auth.api.getSession>>
 >["user"];
 
-function hasPending2FACookie(request: NextRequest): boolean {
-  return (
-    request.cookies.has("better-auth.two_factor_session") ||
-    request.cookies.has("__Secure-better-auth.two_factor_session")
-  );
+function hasPending2FACookie(_request: NextRequest): boolean {
+  // 2FA is handled by IAM — portfolio never has pending 2FA cookies
+  return false;
 }
 
 function classifyRequest(
   session: { user: SessionUser } | null,
-  pending2FA: boolean,
+  _pending2FA: boolean,
   pathname: string,
 ): AuthState {
-  if (pending2FA) return "PENDING_2FA_VERIFY";
-
   if (!session?.user) {
     return "UNAUTHENTICATED";
-  }
-
-  const { user } = session;
-
-  if (!user.passwordChanged) {
-    return "NEEDS_PASSWORD_SETUP";
-  }
-
-  if (!user.twoFactorEnabled) {
-    return "NEEDS_2FA_SETUP";
   }
 
   if (isPublicRoute(pathname)) {
@@ -212,7 +193,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       }),
     });
   } catch (error) {
-    console.error("[proxy] Session validation error:", error);
+    logger.error("Session validation failed", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      pathname,
+      hasCookie: !!request.headers.get("cookie"),
+    });
 
     session = null;
   }
@@ -225,24 +211,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
    * Route handling
    */
   switch (state) {
-    case "PENDING_2FA_VERIFY": {
-      if (pathname === ROUTES.VERIFY_2FA) {
-        const response = NextResponse.next({
-          request: {
-            headers: requestHeaders,
-          },
-        });
-
-        return applySecurityHeaders(response, csp);
-      }
-
-      const response = NextResponse.redirect(
-        new URL(ROUTES.VERIFY_2FA, request.url),
-      );
-
-      return applySecurityHeaders(response, csp);
-    }
-
     case "UNAUTHENTICATED": {
       if (!isProtectedRoute(pathname)) {
         const response = NextResponse.next({
@@ -256,42 +224,6 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
       const response = NextResponse.redirect(
         new URL(ROUTES.LOGIN, request.url),
-      );
-
-      return applySecurityHeaders(response, csp);
-    }
-
-    case "NEEDS_PASSWORD_SETUP": {
-      if (pathname === ROUTES.SETUP_PASSWORD) {
-        const response = NextResponse.next({
-          request: {
-            headers: requestHeaders,
-          },
-        });
-
-        return applySecurityHeaders(response, csp);
-      }
-
-      const response = NextResponse.redirect(
-        new URL(ROUTES.SETUP_PASSWORD, request.url),
-      );
-
-      return applySecurityHeaders(response, csp);
-    }
-
-    case "NEEDS_2FA_SETUP": {
-      if (pathname === ROUTES.SETUP_2FA) {
-        const response = NextResponse.next({
-          request: {
-            headers: requestHeaders,
-          },
-        });
-
-        return applySecurityHeaders(response, csp);
-      }
-
-      const response = NextResponse.redirect(
-        new URL(ROUTES.SETUP_2FA, request.url),
       );
 
       return applySecurityHeaders(response, csp);

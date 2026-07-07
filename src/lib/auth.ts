@@ -103,6 +103,7 @@ export const auth = betterAuth({
           clientSecret: process.env.OAUTH_CLIENT_SECRET ?? "",
           scopes: ["openid", "profile", "email"],
           pkce: true,
+          redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/oauth2/callback/portfolio`,
           getUserInfo: async (tokens) => {
             const idToken = tokens.raw?.id_token as string | undefined;
 

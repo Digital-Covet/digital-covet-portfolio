@@ -17,6 +17,13 @@ const iamJwks = createRemoteJWKSet(
   new URL(`${process.env.IAM_URL}/api/auth/jwks`),
 );
 
+const oauthClientSecret = process.env.OAUTH_CLIENT_SECRET;
+if (!oauthClientSecret) {
+  throw new Error(
+    "[auth] OAUTH_CLIENT_SECRET is not set — required for the 'portfolio' genericOAuth client",
+  );
+}
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
   trustedOrigins: [
@@ -100,7 +107,7 @@ export const auth = betterAuth({
           providerId: "portfolio",
           discoveryUrl: `${process.env.IAM_URL}/api/auth/.well-known/openid-configuration`,
           clientId: "portfolio",
-          clientSecret: process.env.OAUTH_CLIENT_SECRET ?? "",
+          clientSecret: oauthClientSecret,
           scopes: ["openid", "profile", "email"],
           pkce: true,
           redirectURI: `${process.env.BETTER_AUTH_URL}/api/auth/oauth2/callback/portfolio`,

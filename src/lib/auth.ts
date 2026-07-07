@@ -125,7 +125,7 @@ export const auth = betterAuth({
       config: [
         {
           providerId: "portfolio",
-          discoveryUrl: `${process.env.IAM_URL}/.well-known/openid-configuration`,
+          discoveryUrl: `${process.env.IAM_URL}/api/auth/.well-known/openid-configuration`,
           clientId: "portfolio",
           clientSecret: process.env.OAUTH_CLIENT_SECRET ?? "",
           scopes: ["openid", "profile", "email"],

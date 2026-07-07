@@ -25,13 +25,21 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
   const [canAutoRedirect, setCanAutoRedirect] = useState(false);
+  const { data: session, isPending } = authClient.useSession();
 
   useEffect(() => {
-    setCanAutoRedirect(!isOAuthOnCooldown());
-  }, []);
+    if (typeof window === "undefined") return;
+    if (session) {
+      window.location.replace(`${APP_DOMAIN}${ROUTES.DASHBOARD}`);
+      return;
+    }
+    if (!isPending) {
+      setCanAutoRedirect(!isOAuthOnCooldown());
+    }
+  }, [session, isPending]);
 
   const redirectToIAM = useCallback(async () => {
-    if (inFlight.current) return;
+    if (inFlight.current || isPending || session) return;
     inFlight.current = true;
     setOAuthAttempt();
     try {
@@ -55,13 +63,13 @@ export default function LoginPage() {
     } finally {
       inFlight.current = false;
     }
-  }, []);
+  }, [isPending, session]);
 
   useEffect(() => {
-    if (canAutoRedirect) {
+    if (canAutoRedirect && !session && !isPending) {
       redirectToIAM();
     }
-  }, [canAutoRedirect, redirectToIAM]);
+  }, [canAutoRedirect, session, isPending, redirectToIAM]);
 
   const handleRetry = useCallback(() => {
     setError(null);
@@ -75,12 +83,14 @@ export default function LoginPage() {
         <div className="space-y-2 text-center">
           <h1 className="text-2xl font-semibold">Sign in</h1>
           <p className="text-sm text-muted-foreground">
-            {canAutoRedirect
-              ? "Redirecting to iam.digitalcovet.com to authenticate..."
-              : "Click below to sign in with Single Sign-On"}
+            {session
+              ? "Redirecting to dashboard..."
+              : canAutoRedirect
+                ? "Redirecting to iam.digitalcovet.com to authenticate..."
+                : "Click below to sign in with Single Sign-On"}
           </p>
         </div>
-        {canAutoRedirect ? (
+        {(canAutoRedirect || session) ? (
           <div className="flex justify-center">
             <svg
               className="h-8 w-8 animate-spin text-primary"

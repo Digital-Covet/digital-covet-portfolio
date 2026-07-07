@@ -13,8 +13,10 @@ import { sendEmail } from "@/services/email";
 import { renderDeleteVerificationEmail } from "@/services/email-templates";
 import { ac, adminRole, employeeRole, superadminRole } from "./permission";
 
+const IAM_URL = (process.env.IAM_URL ?? "").replace(/\/+$/, "");
+
 const iamJwks = createRemoteJWKSet(
-  new URL(`${process.env.IAM_URL}/api/auth/jwks`),
+  new URL(`${IAM_URL}/api/auth/jwks`),
 );
 
 const oauthClientSecret = process.env.OAUTH_CLIENT_SECRET;
@@ -105,7 +107,7 @@ export const auth = betterAuth({
       config: [
         {
           providerId: "portfolio",
-          discoveryUrl: `${process.env.IAM_URL}/api/auth/.well-known/openid-configuration`,
+          discoveryUrl: `${IAM_URL}/api/auth/.well-known/openid-configuration`,
           clientId: "portfolio",
           clientSecret: oauthClientSecret,
           scopes: ["openid", "profile", "email"],
@@ -121,7 +123,7 @@ export const auth = betterAuth({
 
             if (idToken) {
               const { payload } = await jwtVerify(idToken, iamJwks, {
-                issuer: `${process.env.IAM_URL}/api/auth`,
+                issuer: `${IAM_URL}/api/auth`,
                 audience: "portfolio",
                 algorithms: ["RS256"],
                 clockTolerance: 60,
@@ -135,7 +137,7 @@ export const auth = betterAuth({
             }
 
             const resp = await fetch(
-              `${process.env.IAM_URL}/api/auth/oauth2/userinfo`,
+              `${IAM_URL}/api/auth/oauth2/userinfo`,
               {
                 headers: { Authorization: `Bearer ${tokens.accessToken}` },
               },

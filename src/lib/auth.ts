@@ -125,7 +125,6 @@ export const auth = betterAuth({
               const { payload } = await jwtVerify(idToken, iamJwks, {
                 issuer: `${IAM_URL}/api/auth`,
                 audience: "portfolio",
-                algorithms: ["RS256"],
                 clockTolerance: 60,
               });
               userId = (payload.sub as string) ?? (payload.userId as string);

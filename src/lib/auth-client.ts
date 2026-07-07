@@ -1,4 +1,5 @@
 import {
+  emailOTPClient,
   genericOAuthClient,
   twoFactorClient,
 } from "better-auth/client/plugins";
@@ -9,6 +10,7 @@ export const authClient = createAuthClient({
     process.env.NEXT_PUBLIC_BETTER_AUTH_URL ?? window.location.origin,
   plugins: [
     twoFactorClient(),
+    emailOTPClient(),
     genericOAuthClient(),
   ],
 });

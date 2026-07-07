@@ -3,11 +3,14 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import {
   admin as adminPlugin,
+  emailOTP,
   genericOAuth,
   twoFactor,
 } from "better-auth/plugins";
 import { createRemoteJWKSet, jwtVerify } from "jose";
 import { prisma } from "@/db";
+import { sendEmail } from "@/services/email";
+import { renderDeleteVerificationEmail } from "@/services/email-templates";
 import { ac, adminRole, employeeRole, superadminRole } from "./permission";
 
 const iamJwks = createRemoteJWKSet(
@@ -37,6 +40,16 @@ export const auth = betterAuth({
         required: false,
         defaultValue: null,
       },
+      passwordChanged: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+      },
+      twoFactorEnabled: {
+        type: "boolean",
+        required: false,
+        defaultValue: false,
+      },
     },
   },
   plugins: [
@@ -50,6 +63,35 @@ export const auth = betterAuth({
         superadmin: superadminRole,
         admin: adminRole,
         employee: employeeRole,
+      },
+    }),
+    emailOTP({
+      async sendVerificationOTP({ email, otp, type }) {
+        const username = email.split("@")[0];
+        const { html, text } = renderDeleteVerificationEmail({
+          username,
+          otp,
+        });
+        const subject =
+          type === "sign-in"
+            ? "Your verification code"
+            : type === "email-verification"
+              ? "Verify your email"
+              : "Reset your password";
+        try {
+          await sendEmail({
+            to: email,
+            subject,
+            text,
+            html,
+          });
+        } catch (error) {
+          console.error(
+            "[Auth Hook] Failed to send OTP email:",
+            error instanceof Error ? error.message : error,
+          );
+          throw new Error("Failed to send verification code.");
+        }
       },
     }),
     genericOAuth({

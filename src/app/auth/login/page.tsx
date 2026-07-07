@@ -43,12 +43,15 @@ export default function LoginPage() {
       if (response.error) {
         setError(response.error.message ?? "SSO sign-in failed.");
         toast.error(response.error.message ?? "SSO sign-in failed.");
+        setCanAutoRedirect(false);
+        return;
       }
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "An unexpected error occurred.";
       setError(message);
       toast.error(message);
+      setCanAutoRedirect(false);
     } finally {
       inFlight.current = false;
     }
@@ -62,6 +65,7 @@ export default function LoginPage() {
 
   const handleRetry = useCallback(() => {
     setError(null);
+    setCanAutoRedirect(true);
     redirectToIAM();
   }, [redirectToIAM]);
 

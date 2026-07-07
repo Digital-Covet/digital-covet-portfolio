@@ -5,13 +5,19 @@ import { toast } from "sonner";
 import { authClient } from "@/lib/auth-client";
 import { APP_DOMAIN, ROUTES } from "@/lib/constants";
 
+const OAUTH_IN_FLIGHT_KEY = "portfolio_oauth_in_flight";
+
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
 
   const redirectToIAM = async () => {
     if (inFlight.current) return;
+    if (sessionStorage.getItem(OAUTH_IN_FLIGHT_KEY) === "true") return;
+
     inFlight.current = true;
+    sessionStorage.setItem(OAUTH_IN_FLIGHT_KEY, "true");
+
     try {
       const response = await authClient.signIn.oauth2({
         providerId: "portfolio",
@@ -21,23 +27,34 @@ export default function LoginPage() {
       if (response.error) {
         setError(response.error.message ?? "SSO sign-in failed.");
         toast.error(response.error.message ?? "SSO sign-in failed.");
+        sessionStorage.removeItem(OAUTH_IN_FLIGHT_KEY);
       }
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "An unexpected error occurred.";
       setError(message);
       toast.error(message);
+      sessionStorage.removeItem(OAUTH_IN_FLIGHT_KEY);
     } finally {
       inFlight.current = false;
     }
   };
 
   useEffect(() => {
-    redirectToIAM();
+    sessionStorage.removeItem(OAUTH_IN_FLIGHT_KEY);
+
+    authClient.getSession().then(({ data: session }) => {
+      if (session?.user) {
+        window.location.href = `${APP_DOMAIN}${ROUTES.DASHBOARD}`;
+        return;
+      }
+      redirectToIAM();
+    });
   }, []);
 
   const handleRetry = () => {
     setError(null);
+    sessionStorage.removeItem(OAUTH_IN_FLIGHT_KEY);
     redirectToIAM();
   };
 

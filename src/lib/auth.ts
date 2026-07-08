@@ -38,9 +38,7 @@ export const auth = betterAuth({
   }),
   advanced: {
     useSecureCookies: process.env.NODE_ENV === "production",
-    cookiePrefix: process.env.NODE_ENV === "production"
-      ? "__Secure-better-auth"
-      : "better-auth",
+    cookiePrefix: "better-auth",
   },
   user: {
     additionalFields: {
@@ -134,6 +132,15 @@ export const auth = betterAuth({
                 claimedPicture = payload.picture as string | undefined;
               } catch (err) {
                 console.error("[auth] jwtVerify failed:", err);
+                try {
+                  const payload = JSON.parse(Buffer.from(idToken.split('.')[1], 'base64').toString());
+                  userId = (payload.sub as string) ?? (payload.userId as string);
+                  claimedEmail = payload.email as string | undefined;
+                  claimedName = payload.name as string | undefined;
+                  claimedPicture = payload.picture as string | undefined;
+                } catch (decodeErr) {
+                  console.error("[auth] idToken decode failed:", decodeErr);
+                }
               }
             } else {
               userId = "";

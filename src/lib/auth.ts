@@ -122,15 +122,19 @@ export const auth = betterAuth({
             let claimedPicture: string | undefined;
 
             if (idToken) {
-              const { payload } = await jwtVerify(idToken, iamJwks, {
-                issuer: `${IAM_URL}/api/auth`,
-                audience: "portfolio",
-                clockTolerance: 60,
-              });
-              userId = (payload.sub as string) ?? (payload.userId as string);
-              claimedEmail = payload.email as string | undefined;
-              claimedName = payload.name as string | undefined;
-              claimedPicture = payload.picture as string | undefined;
+              try {
+                const { payload } = await jwtVerify(idToken, iamJwks, {
+                  issuer: [IAM_URL, `${IAM_URL}/api/auth`],
+                  audience: ["portfolio", process.env.BETTER_AUTH_URL ?? "", `${process.env.BETTER_AUTH_URL}/`],
+                  clockTolerance: 60,
+                });
+                userId = (payload.sub as string) ?? (payload.userId as string);
+                claimedEmail = payload.email as string | undefined;
+                claimedName = payload.name as string | undefined;
+                claimedPicture = payload.picture as string | undefined;
+              } catch (err) {
+                console.error("[auth] jwtVerify failed:", err);
+              }
             } else {
               userId = "";
             }

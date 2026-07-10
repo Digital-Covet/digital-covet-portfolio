@@ -7,6 +7,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
@@ -15,6 +16,8 @@ export function UserDropdown() {
   const router = useRouter();
   const { data: session } = authClient.useSession();
   const userImage = session?.user?.image;
+  const userName = session?.user?.name;
+  const userEmail = session?.user?.email;
 
   const handleSignOut = async () => {
     try {
@@ -48,6 +51,19 @@ export function UserDropdown() {
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-44">
+        {(userName || userEmail) && (
+          <>
+            <div className="px-2 py-1.5">
+              {userName && (
+                <p className="text-sm font-medium leading-none">{userName}</p>
+              )}
+              {userEmail && (
+                <p className="text-xs text-muted-foreground mt-1">{userEmail}</p>
+              )}
+            </div>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <DropdownMenuItem
           onClick={() =>
             router.push("https://iam.digitalcovet.com/account-settings")

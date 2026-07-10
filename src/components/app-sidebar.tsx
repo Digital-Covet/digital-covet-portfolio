@@ -6,12 +6,14 @@ import type * as React from "react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
+import { UserDropdown } from "@/components/user-dropdown";
 
 const navItems = [
   { title: "Dashboard", url: "/dashboard" },
@@ -57,6 +59,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <UserDropdown />
+      </SidebarFooter>
     </Sidebar>
   );
 }

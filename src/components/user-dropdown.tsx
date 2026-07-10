@@ -17,8 +17,21 @@ export function UserDropdown() {
   const userImage = session?.user?.image;
 
   const handleSignOut = async () => {
-    await authClient.signOut();
-    router.push("/login");
+    try {
+      const res = await fetch("/api/auth/end-session-url");
+      const { url } = await res.json();
+
+      await authClient.signOut();
+
+      if (url) {
+        window.location.href = url;
+      } else {
+        router.push("/login");
+      }
+    } catch {
+      await authClient.signOut();
+      router.push("/login");
+    }
   };
 
   return (

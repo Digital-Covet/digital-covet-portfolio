@@ -114,7 +114,7 @@ export const auth = betterAuth({
           getUserInfo: async (tokens) => {
             const idToken = tokens.raw?.id_token as string | undefined;
 
-            let userId: string;
+            let userId = "";
             let claimedEmail: string | undefined;
             let claimedName: string | undefined;
             let claimedPicture: string | undefined;
@@ -142,8 +142,6 @@ export const auth = betterAuth({
                   console.error("[auth] idToken decode failed:", decodeErr);
                 }
               }
-            } else {
-              userId = "";
             }
 
             const resp = await fetch(

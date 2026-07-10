@@ -8,7 +8,6 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { UserDropdown } from "@/components/user-dropdown";
 import { prisma } from "@/db";
 import { getCurrentUser } from "@/lib/auth.server";
 export default async function AppLayout({

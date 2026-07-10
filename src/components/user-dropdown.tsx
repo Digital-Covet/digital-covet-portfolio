@@ -7,7 +7,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { authClient } from "@/lib/auth-client";
@@ -39,7 +38,7 @@ export function UserDropdown() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="outline-none cursor-pointer rounded-full overflow-hidden p-0 border-0 bg-transparent">
+      <DropdownMenuTrigger className="outline-none cursor-pointer flex items-center gap-2 p-1 border-0 bg-transparent w-full">
         {userImage ? (
           <img
             src={userImage}
@@ -49,21 +48,18 @@ export function UserDropdown() {
         ) : (
           <Avatar className="size-8" />
         )}
+        {(userName || userEmail) && (
+          <div className="flex flex-col items-start min-w-0">
+            {userName && (
+              <span className="text-sm font-medium truncate">{userName}</span>
+            )}
+            {userEmail && (
+              <span className="text-xs text-muted-foreground truncate">{userEmail}</span>
+            )}
+          </div>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-44">
-        {(userName || userEmail) && (
-          <>
-            <div className="px-2 py-1.5">
-              {userName && (
-                <p className="text-sm font-medium leading-none">{userName}</p>
-              )}
-              {userEmail && (
-                <p className="text-xs text-muted-foreground mt-1">{userEmail}</p>
-              )}
-            </div>
-            <DropdownMenuSeparator />
-          </>
-        )}
         <DropdownMenuItem
           onClick={() =>
             router.push("https://iam.digitalcovet.com/account-settings")

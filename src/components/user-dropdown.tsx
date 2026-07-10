@@ -49,7 +49,9 @@ export function UserDropdown() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-44">
         <DropdownMenuItem
-          onClick={() => router.push("/account/settings")}
+          onClick={() =>
+            router.push("https://iam.digitalcovet.com/account-settings")
+          }
           className="cursor-pointer"
         >
           <GearIcon />

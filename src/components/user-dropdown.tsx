@@ -38,7 +38,7 @@ export function UserDropdown() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="outline-none cursor-pointer flex items-center gap-2 p-1 border-0 bg-transparent w-full">
+      <DropdownMenuTrigger className="outline-none cursor-pointer flex items-center gap-2 p-1.5 rounded-md border border-sidebar-border bg-transparent w-full hover:bg-sidebar-accent transition-colors">
         {userImage ? (
           <img
             src={userImage}

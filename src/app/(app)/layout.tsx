@@ -61,7 +61,6 @@ export default async function AppLayout({
             />
             <DynamicBreadcrumb />
           </div>
-          <UserDropdown />
         </header>
         {children}
       </SidebarInset>
